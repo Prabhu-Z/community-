@@ -33,11 +33,48 @@ const CoordinatorLeaderboardPage = () => {
       setCommunity(myCommunity);
 
       if (myCommunity?.id) {
-        const lbRes = await api.get(`/leaderboard/community/${myCommunity.id}`);
-        setLeaderboard(lbRes.data || []);
+        const [lbRes, memRes] = await Promise.all([
+          api.get(`/leaderboard/community/${myCommunity.id}`).catch(() => ({ data: [] })),
+          api.get(`/memberships/community/${myCommunity.id}`).catch(() => ({ data: [] }))
+        ]);
+
+        const lbData = lbRes.data || [];
+        const membersData = memRes.data || [];
+
+        // Map every community member to their leaderboard points and rank
+        const combined = membersData.map((m) => {
+          const matchedEntry = lbData.find(
+            (e) => e.studentId === m.studentId || e.studentCode === m.studentCode || (e.studentName && e.studentName === m.studentName)
+          );
+          return {
+            studentId: m.studentId || m.id,
+            studentName: m.studentName || 'Student Member',
+            studentCode: m.studentCode || 'N/A',
+            department: m.department || 'General',
+            points: matchedEntry ? matchedEntry.points : (m.points || 0),
+          };
+        });
+
+        if (combined.length > 0) {
+          combined.sort((a, b) => b.points - a.points);
+          combined.forEach((item, idx) => {
+            item.rank = idx + 1;
+          });
+          setLeaderboard(combined);
+        } else if (lbData.length > 0) {
+          setLeaderboard(lbData);
+        } else {
+          const globalRes = await api.get('/leaderboard/all').catch(() => ({ data: [] }));
+          setLeaderboard(globalRes.data || []);
+        }
+      } else {
+        const globalRes = await api.get('/leaderboard/all').catch(() => ({ data: [] }));
+        setLeaderboard(globalRes.data || []);
       }
     } catch (err) {
       console.error('Error fetching coordinator leaderboard:', err);
+      const globalRes = await api.get('/leaderboard/all').catch(() => ({ data: [] }));
+      setLeaderboard(globalRes.data || []);
     } finally {
       setLoading(false);
     }

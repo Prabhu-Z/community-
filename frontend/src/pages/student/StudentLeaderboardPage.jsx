@@ -18,43 +18,84 @@ const StudentLeaderboardPage = () => {
   }, [user]);
 
   const fetchUserCommunities = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
     try {
       let studentIdParam = user?.studentId || user?.id;
-      let mems = [];
+      const [memRes, commRes] = await Promise.all([
+        api.get(`/memberships/student/${studentIdParam}`).catch(() => ({ data: [] })),
+        api.get('/communities').catch(() => ({ data: [] }))
+      ]);
 
-      try {
-        const memRes = await api.get(`/memberships/student/${studentIdParam}`);
-        mems = (memRes.data || []).filter(m => m.status === 'APPROVED');
-      } catch (e) {
-        if (user?.id) {
-          const uMemRes = await api.get(`/memberships/user/${user.id}`).catch(() => ({ data: [] }));
-          mems = (uMemRes.data || []).filter(m => m.status === 'APPROVED');
+      const myMems = (memRes.data || []).filter(m => m.status === 'APPROVED');
+      const allComms = commRes.data || [];
+
+      // Combine user joined communities and all available communities
+      const commOptions = [];
+      myMems.forEach(m => {
+        commOptions.push({ communityId: m.communityId, communityName: m.communityName || 'Community' });
+      });
+      allComms.forEach(ac => {
+        if (!commOptions.some(co => co.communityId === ac.id)) {
+          commOptions.push({ communityId: ac.id, communityName: ac.name });
         }
-      }
+      });
 
-      setCommunities(mems);
+      setCommunities(commOptions);
 
-      if (mems.length > 0) {
-        setSelectedCommunity(mems[0]);
-        loadLeaderboard(mems[0].communityId);
+      if (commOptions.length > 0) {
+        setSelectedCommunity(commOptions[0]);
+        loadLeaderboard(commOptions[0].communityId);
       } else {
-        setLoading(false);
+        loadLeaderboard('ALL');
       }
     } catch (err) {
       console.error('Error fetching user communities for leaderboard:', err);
-      setLoading(false);
+      loadLeaderboard('ALL');
     }
   };
 
   const loadLeaderboard = async (communityId) => {
     setLoading(true);
     try {
-      const res = await api.get(`/leaderboard/community/${communityId}`);
-      const data = res.data || [];
+      let data = [];
+      if (communityId && communityId !== 'ALL') {
+        const [lbRes, memRes] = await Promise.all([
+          api.get(`/leaderboard/community/${communityId}`).catch(() => ({ data: [] })),
+          api.get(`/memberships/community/${communityId}`).catch(() => ({ data: [] }))
+        ]);
+
+        const lbData = lbRes.data || [];
+        const membersData = memRes.data || [];
+
+        const combined = membersData.map((m) => {
+          const matchedEntry = lbData.find(
+            (e) => e.studentId === m.studentId || e.studentCode === m.studentCode || (e.studentName && e.studentName === m.studentName)
+          );
+          return {
+            studentId: m.studentId || m.id,
+            studentName: m.studentName || 'Student Member',
+            studentCode: m.studentCode || 'N/A',
+            department: m.department || 'General',
+            points: matchedEntry ? matchedEntry.points : (m.points || 0),
+          };
+        });
+
+        if (combined.length > 0) {
+          combined.sort((a, b) => b.points - a.points);
+          combined.forEach((item, idx) => {
+            item.rank = idx + 1;
+          });
+          data = combined;
+        } else if (lbData.length > 0) {
+          data = lbData;
+        } else {
+          const globalRes = await api.get('/leaderboard/all').catch(() => ({ data: [] }));
+          data = globalRes.data || [];
+        }
+      } else {
+        const globalRes = await api.get('/leaderboard/all').catch(() => ({ data: [] }));
+        data = globalRes.data || [];
+      }
+
       setLeaderboard(data);
 
       let studentId = user?.studentId || user?.id;

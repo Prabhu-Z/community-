@@ -29,11 +29,39 @@ const FacultyLeaderboardPage = () => {
     setLoading(true);
     try {
       if (commId === 'ALL') {
-        const res = await api.get('/leaderboard/all');
+        const res = await api.get('/leaderboard/all').catch(() => ({ data: [] }));
         setLeaderboard(res.data || []);
       } else {
-        const res = await api.get(`/leaderboard/community/${commId}`);
-        setLeaderboard(res.data || []);
+        const [lbRes, memRes] = await Promise.all([
+          api.get(`/leaderboard/community/${commId}`).catch(() => ({ data: [] })),
+          api.get(`/memberships/community/${commId}`).catch(() => ({ data: [] }))
+        ]);
+
+        const lbData = lbRes.data || [];
+        const membersData = memRes.data || [];
+
+        const combined = membersData.map((m) => {
+          const matchedEntry = lbData.find(
+            (e) => e.studentId === m.studentId || e.studentCode === m.studentCode || (e.studentName && e.studentName === m.studentName)
+          );
+          return {
+            studentId: m.studentId || m.id,
+            studentName: m.studentName || 'Student Member',
+            studentCode: m.studentCode || 'N/A',
+            department: m.department || 'General',
+            points: matchedEntry ? matchedEntry.points : (m.points || 0),
+          };
+        });
+
+        if (combined.length > 0) {
+          combined.sort((a, b) => b.points - a.points);
+          combined.forEach((item, idx) => {
+            item.rank = idx + 1;
+          });
+          setLeaderboard(combined);
+        } else {
+          setLeaderboard(lbData);
+        }
       }
     } catch (err) {
       console.error('Error loading leaderboard:', err);
