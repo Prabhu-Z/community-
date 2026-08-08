@@ -41,32 +41,29 @@ const CoordinatorLeaderboardPage = () => {
         const lbData = lbRes.data || [];
         const membersData = memRes.data || [];
 
-        // Map every community member to their leaderboard points and rank
-        const combined = membersData.map((m) => {
-          const matchedEntry = lbData.find(
+        let finalEntries = [...lbData];
+
+        membersData.forEach((m) => {
+          const exists = finalEntries.some(
             (e) => e.studentId === m.studentId || e.studentCode === m.studentCode || (e.studentName && e.studentName === m.studentName)
           );
-          return {
-            studentId: m.studentId || m.id,
-            studentName: m.studentName || 'Student Member',
-            studentCode: m.studentCode || 'N/A',
-            department: m.department || 'General',
-            points: matchedEntry ? matchedEntry.points : (m.points || 0),
-          };
+          if (!exists) {
+            finalEntries.push({
+              studentId: m.studentId || m.id,
+              studentName: m.studentName || 'Student Member',
+              studentCode: m.studentCode || 'N/A',
+              department: m.department || 'General',
+              points: m.points || 0,
+            });
+          }
         });
 
-        if (combined.length > 0) {
-          combined.sort((a, b) => b.points - a.points);
-          combined.forEach((item, idx) => {
-            item.rank = idx + 1;
-          });
-          setLeaderboard(combined);
-        } else if (lbData.length > 0) {
-          setLeaderboard(lbData);
-        } else {
-          const globalRes = await api.get('/leaderboard/all').catch(() => ({ data: [] }));
-          setLeaderboard(globalRes.data || []);
-        }
+        finalEntries.sort((a, b) => b.points - a.points);
+        finalEntries.forEach((item, idx) => {
+          item.rank = idx + 1;
+        });
+
+        setLeaderboard(finalEntries);
       } else {
         const globalRes = await api.get('/leaderboard/all').catch(() => ({ data: [] }));
         setLeaderboard(globalRes.data || []);

@@ -47,21 +47,19 @@ public class LeaderboardService {
 
         List<TaskSubmission> submissions = taskSubmissionRepository.findAll();
         List<EventRegistration> registrations = registrationRepository.findAll();
-        List<ActivityRequest> activityRequests = activityRequestRepository.findByCommunityIdAndStatus(communityId, "APPROVED");
+        List<ActivityRequest> activityRequests = activityRequestRepository.findAll();
 
         Map<Long, Integer> studentPointsMap = new HashMap<>();
 
         // 1. Task Submissions Points (+3 Pts for Daily Task, +5 Pts for Community Task)
         for (TaskSubmission sub : submissions) {
-            if ("VERIFIED".equalsIgnoreCase(sub.getStatus()) &&
-                    sub.getTaskAssignment() != null &&
-                    sub.getTaskAssignment().getCommunity() != null &&
-                    sub.getTaskAssignment().getCommunity().getId().equals(communityId) &&
-                    sub.getStudent() != null) {
+            String status = sub.getStatus();
+            boolean isVerified = "VERIFIED".equalsIgnoreCase(status) || "APPROVED".equalsIgnoreCase(status) || "COMPLETED".equalsIgnoreCase(status) || "SUBMITTED".equalsIgnoreCase(status);
 
+            if (isVerified && sub.getStudent() != null) {
                 Long studentId = sub.getStudent().getId();
-                String taskType = sub.getTaskAssignment().getTaskType();
-                boolean isCommunityTask = "COMMUNITY_TASK".equalsIgnoreCase(taskType) || sub.getTaskAssignment().getAssignedByFacultyName() != null;
+                String taskType = sub.getTaskAssignment() != null ? sub.getTaskAssignment().getTaskType() : null;
+                boolean isCommunityTask = "COMMUNITY_TASK".equalsIgnoreCase(taskType) || (sub.getTaskAssignment() != null && sub.getTaskAssignment().getAssignedByFacultyName() != null);
 
                 int pts = isCommunityTask ? 5 : 3;
                 studentPointsMap.put(studentId, studentPointsMap.getOrDefault(studentId, 0) + pts);
@@ -70,11 +68,7 @@ public class LeaderboardService {
 
         // 2. Event Registrations Points (+1 Pt per Registered Event)
         for (EventRegistration reg : registrations) {
-            if (reg.getEvent() != null &&
-                    reg.getEvent().getCommunity() != null &&
-                    reg.getEvent().getCommunity().getId().equals(communityId) &&
-                    reg.getStudent() != null) {
-
+            if (reg.getStudent() != null) {
                 Long studentId = reg.getStudent().getId();
                 studentPointsMap.put(studentId, studentPointsMap.getOrDefault(studentId, 0) + 1);
             }
@@ -82,9 +76,9 @@ public class LeaderboardService {
 
         // 3. Approved Individual Activity Claim Points (Granted by Coordinator)
         for (ActivityRequest req : activityRequests) {
-            if (req.getStudent() != null) {
+            if (req.getStudent() != null && ("APPROVED".equalsIgnoreCase(req.getStatus()) || "VERIFIED".equalsIgnoreCase(req.getStatus()))) {
                 Long studentId = req.getStudent().getId();
-                int granted = req.getGrantedPoints() != null ? req.getGrantedPoints() : 0;
+                int granted = req.getGrantedPoints() != null && req.getGrantedPoints() > 0 ? req.getGrantedPoints() : 5;
                 studentPointsMap.put(studentId, studentPointsMap.getOrDefault(studentId, 0) + granted);
             }
         }
@@ -102,14 +96,16 @@ public class LeaderboardService {
                 if (s == null) continue;
                 processedStudentIds.add(s.getId());
 
-                int points = studentPointsMap.getOrDefault(s.getId(), 0);
+                int basePts = s.getPoints() != null ? s.getPoints() : 0;
+                int calculatedPts = studentPointsMap.getOrDefault(s.getId(), 0);
+                int finalPoints = Math.max(basePts, calculatedPts);
 
                 entries.add(LeaderboardEntryDTO.builder()
                         .studentId(s.getId())
                         .studentCode(s.getStudentCode())
                         .studentName(s.getName())
                         .department(s.getDepartment() != null ? s.getDepartment() : "General")
-                        .points(points)
+                        .points(finalPoints)
                         .communityId(communityId)
                         .communityName(communityName)
                         .build());
@@ -120,13 +116,16 @@ public class LeaderboardService {
         if (entries.isEmpty()) {
             List<Student> allStudents = studentRepository.findAll();
             for (Student s : allStudents) {
-                int points = studentPointsMap.getOrDefault(s.getId(), 0);
+                int basePts = s.getPoints() != null ? s.getPoints() : 0;
+                int calculatedPts = studentPointsMap.getOrDefault(s.getId(), 0);
+                int finalPoints = Math.max(basePts, calculatedPts);
+
                 entries.add(LeaderboardEntryDTO.builder()
                         .studentId(s.getId())
                         .studentCode(s.getStudentCode())
                         .studentName(s.getName())
                         .department(s.getDepartment() != null ? s.getDepartment() : "General")
-                        .points(points)
+                        .points(finalPoints)
                         .communityId(communityId)
                         .communityName(communityName)
                         .build());
@@ -151,19 +150,17 @@ public class LeaderboardService {
         List<TaskSubmission> submissions = taskSubmissionRepository.findAll();
         List<EventRegistration> registrations = registrationRepository.findAll();
         List<ActivityRequest> activityRequests = activityRequestRepository.findAll().stream()
-                .filter(r -> "APPROVED".equalsIgnoreCase(r.getStatus()))
+                .filter(r -> "APPROVED".equalsIgnoreCase(r.getStatus()) || "VERIFIED".equalsIgnoreCase(r.getStatus()))
                 .collect(Collectors.toList());
 
         Map<Long, Integer> studentPointsMap = new HashMap<>();
 
-        // Base points for each student
-        for (Student s : allStudents) {
-            studentPointsMap.put(s.getId(), 0);
-        }
-
         // 1. Task Points
         for (TaskSubmission sub : submissions) {
-            if ("VERIFIED".equalsIgnoreCase(sub.getStatus()) && sub.getStudent() != null) {
+            String status = sub.getStatus();
+            boolean isVerified = "VERIFIED".equalsIgnoreCase(status) || "APPROVED".equalsIgnoreCase(status) || "COMPLETED".equalsIgnoreCase(status) || "SUBMITTED".equalsIgnoreCase(status);
+
+            if (isVerified && sub.getStudent() != null) {
                 Long sId = sub.getStudent().getId();
                 String taskType = sub.getTaskAssignment() != null ? sub.getTaskAssignment().getTaskType() : null;
                 boolean isCommunityTask = "COMMUNITY_TASK".equalsIgnoreCase(taskType) || (sub.getTaskAssignment() != null && sub.getTaskAssignment().getAssignedByFacultyName() != null);
@@ -185,14 +182,16 @@ public class LeaderboardService {
         for (ActivityRequest req : activityRequests) {
             if (req.getStudent() != null) {
                 Long sId = req.getStudent().getId();
-                int granted = req.getGrantedPoints() != null ? req.getGrantedPoints() : 0;
+                int granted = req.getGrantedPoints() != null && req.getGrantedPoints() > 0 ? req.getGrantedPoints() : 5;
                 studentPointsMap.put(sId, studentPointsMap.getOrDefault(sId, 0) + granted);
             }
         }
 
         List<LeaderboardEntryDTO> entries = new ArrayList<>();
         for (Student s : allStudents) {
-            int totalPts = studentPointsMap.getOrDefault(s.getId(), 0);
+            int basePts = s.getPoints() != null ? s.getPoints() : 0;
+            int calculatedPts = studentPointsMap.getOrDefault(s.getId(), 0);
+            int totalPts = Math.max(basePts, calculatedPts);
 
             entries.add(LeaderboardEntryDTO.builder()
                     .studentId(s.getId())

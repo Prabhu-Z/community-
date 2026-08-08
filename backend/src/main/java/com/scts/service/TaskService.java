@@ -24,14 +24,16 @@ public class TaskService {
     private final CommunityRepository communityRepository;
     private final MembershipRepository membershipRepository;
     private final NotificationService notificationService;
+    private final StudentRepository studentRepository;
 
     @Autowired
-    public TaskService(TaskAssignmentRepository taskAssignmentRepository, TaskSubmissionRepository taskSubmissionRepository, CommunityRepository communityRepository, MembershipRepository membershipRepository, NotificationService notificationService) {
+    public TaskService(TaskAssignmentRepository taskAssignmentRepository, TaskSubmissionRepository taskSubmissionRepository, CommunityRepository communityRepository, MembershipRepository membershipRepository, NotificationService notificationService, StudentRepository studentRepository) {
         this.taskAssignmentRepository = taskAssignmentRepository;
         this.taskSubmissionRepository = taskSubmissionRepository;
         this.communityRepository = communityRepository;
         this.membershipRepository = membershipRepository;
         this.notificationService = notificationService;
+        this.studentRepository = studentRepository;
     }
 
     @Transactional
@@ -283,6 +285,13 @@ public class TaskService {
         boolean isCommunityTask = "COMMUNITY_TASK".equalsIgnoreCase(submission.getTaskAssignment().getTaskType()) ||
                 submission.getTaskAssignment().getAssignedByFacultyName() != null;
         int pts = isCommunityTask ? 5 : 3;
+
+        Student student = submission.getStudent();
+        if (student != null) {
+            int currentPts = student.getPoints() != null ? student.getPoints() : 0;
+            student.setPoints(currentPts + pts);
+            studentRepository.save(student);
+        }
 
         notificationService.createNotification(
                 submission.getStudent().getUser().getId(),

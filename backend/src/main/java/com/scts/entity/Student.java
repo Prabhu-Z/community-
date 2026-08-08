@@ -38,6 +38,9 @@ public class Student {
     @Column(name = "profile_image")
     private String profileImage;
 
+    @Column(name = "points")
+    private Integer points = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -82,6 +85,8 @@ public class Student {
     public void setContact(String contact) { this.contact = contact; }
     public String getProfileImage() { return profileImage; }
     public void setProfileImage(String profileImage) { this.profileImage = profileImage; }
+    public Integer getPoints() { return points != null ? points : 0; }
+    public void setPoints(Integer points) { this.points = points; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 

@@ -5,7 +5,8 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Timeline from '../../components/common/Timeline';
 import Badge from '../../components/common/Badge';
 import PrintReportModal from '../../components/reports/PrintReportModal';
-import { User, Mail, Phone, BookOpen, Award, CheckCircle2, FileCheck, Printer } from 'lucide-react';
+import StudentHeatStreak from '../../components/common/StudentHeatStreak';
+import { User, Mail, Phone, BookOpen, Award, CheckCircle2, FileCheck, Printer, CheckSquare, Sparkles } from 'lucide-react';
 
 const StudentProfilePage = () => {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ const StudentProfilePage = () => {
   const [activities, setActivities] = useState([]);
   const [achievements, setAchievements] = useState([]);
   const [certificates, setCertificates] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reportModal, setReportModal] = useState(false);
   const [reportData, setReportData] = useState(null);
@@ -26,41 +28,29 @@ const StudentProfilePage = () => {
 
     const fetchStudentData = async () => {
       try {
-        const studentRes = await api.get(`/students/user/${user.id}`);
-        const s = studentRes.data;
+        const studentRes = await api.get(`/students/user/${user.id}`).catch(() => null);
+        const s = studentRes?.data || null;
         setStudent(s);
 
-        if (s?.id) {
-          const [commRes, actRes, achRes, certRes] = await Promise.all([
-            api.get(`/students/${s.id}/communities`).catch(() => ({ data: [] })),
-            api.get(`/students/${s.id}/activities`).catch(() => ({ data: [] })),
-            api.get(`/students/${s.id}/achievements`).catch(() => ({ data: [] })),
-            api.get(`/students/${s.id}/certificates`).catch(() => ({ data: [] })),
+        const studentIdParam = s?.id || user?.studentId || user?.id;
+
+        if (studentIdParam) {
+          const [commRes, actRes, achRes, certRes, taskRes] = await Promise.all([
+            api.get(`/students/${studentIdParam}/communities`).catch(() => ({ data: [] })),
+            api.get(`/students/${studentIdParam}/activities`).catch(() => ({ data: [] })),
+            api.get(`/students/${studentIdParam}/achievements`).catch(() => ({ data: [] })),
+            api.get(`/students/${studentIdParam}/certificates`).catch(() => ({ data: [] })),
+            api.get(`/tasks/student/${studentIdParam}`).catch(() => ({ data: [] })),
           ]);
 
           setCommunities(commRes.data || []);
           setActivities(actRes.data || []);
           setAchievements(achRes.data || []);
           setCertificates(certRes.data || []);
+          setTasks(taskRes.data || []);
         }
       } catch (err) {
         console.error('Error fetching student profile:', err);
-        // Fallback profile if API fails or user is new
-        setStudent({
-          id: user.id,
-          name: user.name || 'Student User',
-          studentCode: 'STU' + (10000 + user.id),
-          department: 'Computer Science & Engineering',
-          degree: 'B.Tech',
-          year: 2,
-          semester: 4,
-          email: user.email || 'student@scts.edu',
-          contact: '+91 9876543210',
-          attendancePercentage: 92.0,
-          totalVolunteerHours: 0,
-          totalAchievements: 0,
-          totalCertificates: 0,
-        });
       } finally {
         setLoading(false);
       }
@@ -69,9 +59,10 @@ const StudentProfilePage = () => {
   }, [user]);
 
   const handlePrintPortfolio = async () => {
-    if (!student?.id) return;
+    const sId = student?.id || user?.studentId || user?.id;
+    if (!sId) return;
     try {
-      const res = await api.get(`/reports/student/${student.id}`);
+      const res = await api.get(`/reports/student/${sId}`);
       setReportData(res.data);
       setReportModal(true);
     } catch (err) {
@@ -79,12 +70,12 @@ const StudentProfilePage = () => {
     }
   };
 
-  if (loading) return <LoadingSpinner label="Loading student portfolio & dashboard..." />;
+  if (loading) return <LoadingSpinner label="Loading student portfolio & heatstreak dashboard..." />;
 
   const activeStudent = student || {
     id: user?.id || 1,
     name: user?.name || 'Student User',
-    studentCode: 'STU10001',
+    studentCode: 'STU' + (10000 + (user?.id || 1)),
     department: 'Computer Science & Engineering',
     degree: 'B.Tech',
     year: 2,
@@ -102,7 +93,7 @@ const StudentProfilePage = () => {
       {/* Portfolio Header Card */}
       <div className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-[#7c3aed] to-[#8b5cf6] flex items-center justify-center text-3xl font-bold text-slate-900 shadow-lg shadow-purple-500/25">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-[#7c3aed] to-[#8b5cf6] flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-purple-500/25">
             {activeStudent.name ? activeStudent.name[0] : 'S'}
           </div>
           <div>
@@ -123,12 +114,15 @@ const StudentProfilePage = () => {
         </button>
       </div>
 
-      {/* Portfolio Breakdown Tabs/Grids */}
+      {/* LEETCODE-STYLE HEATSTREAK MATRIX COMPONENT */}
+      <StudentHeatStreak studentId={activeStudent.id} tasks={tasks} />
+
+      {/* Portfolio Breakdown Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Basic Info & Performance Summary */}
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-            <h3 className="text-lg font-bold text-[#7c3aed] border-b border-slate-100 pb-2">Academic & Contact</h3>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-3">
+            <h3 className="text-lg font-extrabold text-[#7c3aed] border-b border-slate-100 pb-2">Academic & Contact</h3>
             <div className="space-y-2.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Email Address:</span>
@@ -149,60 +143,74 @@ const StudentProfilePage = () => {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-            <h3 className="text-lg font-bold text-[#7c3aed] border-b border-slate-100 pb-2">Overall Performance Metrics</h3>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <h3 className="text-lg font-extrabold text-slate-900 border-b border-slate-100 pb-2">Participation Metrics</h3>
             <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="p-3.5 rounded-xl bg-purple-50/80 border border-purple-100">
-                <div className="text-[#7c3aed]xl font-extrabold text-[#7c3aed]">{activeStudent.attendancePercentage || 92}%</div>
-                <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mt-0.5">Attendance Rate</div>
+              <div className="p-3 bg-purple-50 rounded-xl border border-purple-100">
+                <div className="text-2xl font-extrabold text-[#7c3aed] font-mono">{activeStudent.attendancePercentage || 92}%</div>
+                <div className="text-[10px] text-slate-500 font-bold uppercase mt-1">Attendance</div>
               </div>
-              <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-100">
-                <div className="text-[#7c3aed]xl font-extrabold text-emerald-600">{activeStudent.totalVolunteerHours || 0} hrs</div>
-                <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mt-0.5">Verified Hours</div>
+              <div className="p-3 bg-purple-50 rounded-xl border border-purple-100">
+                <div className="text-2xl font-extrabold text-[#7c3aed] font-mono">{activeStudent.totalVolunteerHours || 0} hrs</div>
+                <div className="text-[10px] text-slate-500 font-bold uppercase mt-1">Volunteer Hours</div>
               </div>
-              <div className="p-3.5 rounded-xl bg-indigo-50/80 border border-indigo-100">
-                <div className="text-[#7c3aed]xl font-extrabold text-indigo-600">{achievements.length || activeStudent.totalAchievements || 0}</div>
-                <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mt-0.5">Awards & Titles</div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="text-2xl font-extrabold text-slate-900 font-mono">{communities.length}</div>
+                <div className="text-[10px] text-slate-500 font-bold uppercase mt-1">Joined Clubs</div>
               </div>
-              <div className="p-3.5 rounded-xl bg-violet-50/80 border border-violet-100">
-                <div className="text-[#7c3aed]xl font-extrabold text-violet-600">{certificates.length || activeStudent.totalCertificates || 0}</div>
-                <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mt-0.5">Certificates Issued</div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="text-2xl font-extrabold text-slate-900 font-mono">{achievements.length}</div>
+                <div className="text-[10px] text-slate-500 font-bold uppercase mt-1">Achievements</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Communities & Verified Achievements */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-xl font-bold text-slate-900">Joined Communities ({communities.length})</h3>
-            {communities.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {communities.map((c) => (
-                  <div key={c.id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-center justify-between text-xs hover:border-[#8b5cf6]/40 transition">
-                    <div>
-                      <h4 className="font-extrabold text-slate-800">{c.communityName}</h4>
-                      <span className="text-[10px] text-slate-500 font-medium">{c.communityCategory}</span>
-                    </div>
-                    <Badge status={c.role}>{c.role}</Badge>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-xs text-slate-500 p-4 border border-dashed border-slate-300 rounded-xl text-center font-medium">
-                You haven't joined any communities yet. Explore & join communities to build your portfolio!
-              </div>
-            )}
-          </div>
+        {/* Middle Column: Joined Communities */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+          <h3 className="text-lg font-extrabold text-slate-900 flex items-center justify-between border-b border-slate-100 pb-2">
+            <span>Enrolled Communities</span>
+            <span className="text-xs font-mono text-[#7c3aed] bg-purple-100 px-2 py-0.5 rounded-full font-bold">{communities.length}</span>
+          </h3>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-xl font-bold text-slate-900">Complete Extracurricular Timeline</h3>
+          {communities.length > 0 ? (
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+              {communities.map((c) => (
+                <div key={c.id || c.communityId} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between shadow-sm">
+                  <div>
+                    <div className="font-extrabold text-slate-900 text-xs">{c.name || c.communityName}</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5 font-medium">Category: {c.category || 'Technical'}</div>
+                  </div>
+                  <Badge status={c.status || 'APPROVED'}>{c.status || 'APPROVED'}</Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center text-xs text-slate-500 font-medium">
+              No joined communities found yet. Browse "Explore Communities" to join.
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Activity Timeline */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+          <h3 className="text-lg font-extrabold text-slate-900 border-b border-slate-100 pb-2">Verified Activity Timeline</h3>
+          {activities.length > 0 ? (
             <Timeline activities={activities} />
-          </div>
+          ) : (
+            <div className="p-8 text-center text-xs text-slate-500 font-medium">
+              No verified activity logs recorded yet.
+            </div>
+          )}
         </div>
       </div>
 
-      <PrintReportModal isOpen={reportModal} onClose={() => setReportModal(false)} reportData={reportData} />
+      {/* Official Portfolio PDF Modal */}
+      <PrintReportModal
+        isOpen={reportModal}
+        onClose={() => setReportModal(false)}
+        reportData={reportData}
+      />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
+import StudentHeatStreak from '../../components/common/StudentHeatStreak';
 import { CheckSquare, Link2, Upload, FileText, CheckCircle2, Clock, XCircle, ExternalLink, Users, Sparkles, Calendar, AlertCircle } from 'lucide-react';
 
 const StudentTasksPage = () => {
@@ -158,7 +159,7 @@ const StudentTasksPage = () => {
                 : 'text-slate-600 hover:text-[#7c3aed]'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" /> 🏛️ Community Tasks
+            🏛️ Community Tasks
           </button>
 
           <button
@@ -169,21 +170,24 @@ const StudentTasksPage = () => {
                 : 'text-slate-600 hover:text-[#7c3aed]'
             }`}
           >
-            <Calendar className="w-3.5 h-3.5" /> 📅 Daily Tasks
+            ⚡ Daily Tasks
           </button>
 
           <button
             onClick={() => setTaskTypeFilter('ALL')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
               taskTypeFilter === 'ALL'
                 ? 'bg-gradient-to-r from-[#8b5cf6] to-purple-600 text-black shadow-sm font-extrabold'
                 : 'text-slate-600 hover:text-[#7c3aed]'
             }`}
           >
-            All ({tasks.length})
+            All Types
           </button>
         </div>
       </div>
+
+      {/* LEETCODE-STYLE HEATSTREAK MATRIX COMPONENT */}
+      <StudentHeatStreak studentId={user?.id} tasks={tasks} />
 
       {/* Status Filter Sub-Bar */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-4">

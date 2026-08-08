@@ -105,6 +105,14 @@ public class ActivityRequestService {
 
         ActivityRequest updated = activityRequestRepository.save(request);
 
+        // Award points to Student object
+        Student student = updated.getStudent();
+        if (student != null) {
+            int currentPts = student.getPoints() != null ? student.getPoints() : 0;
+            student.setPoints(currentPts + ptsToGrant);
+            studentRepository.save(student);
+        }
+
         // Notify Student
         if (updated.getStudent() != null && updated.getStudent().getUser() != null) {
             notificationService.createNotification(
