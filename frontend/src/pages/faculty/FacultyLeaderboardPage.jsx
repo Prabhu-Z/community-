@@ -98,13 +98,13 @@ const FacultyLeaderboardPage = () => {
         <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl border border-slate-200 self-start sm:self-auto">
           <Globe className="w-4 h-4 text-[#7c3aed]" />
           <select
-            value={selectedCommunityId}
+            value={String(selectedCommunityId)}
             onChange={(e) => handleSelectCommunity(e.target.value)}
             className="bg-transparent text-xs font-bold text-slate-900 focus:outline-none cursor-pointer"
           >
             <option value="ALL" className="bg-white text-slate-900">🏆 ALL COMMUNITIES (Campus Overall)</option>
             {communities.map((c) => (
-              <option key={c.id} value={c.id} className="bg-white text-slate-900">
+              <option key={c.id} value={String(c.id)} className="bg-white text-slate-900">
                 {c.name}
               </option>
             ))}
@@ -128,8 +128,8 @@ const FacultyLeaderboardPage = () => {
             }
 
             return (
-              <div key={st.studentId || index} className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 rounded-3xl border border-slate-200 text-center space-y-3 relative">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr ${badgeBg} flex items-center justify-center shadow-lg">
+              <div key={st.studentId || index} className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 text-center space-y-3 relative">
+                <div className={`w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr ${badgeBg} flex items-center justify-center shadow-lg`}>
                   {medalIcon}
                 </div>
 
