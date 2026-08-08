@@ -96,28 +96,9 @@ public class LeaderboardService {
             for (Membership m : activeMembers) {
                 Student s = m.getStudent();
                 if (s == null) continue;
+                if (processedStudentIds.contains(s.getId())) continue;
                 processedStudentIds.add(s.getId());
 
-                int basePts = s.getPoints() != null ? s.getPoints() : 0;
-                int calculatedPts = studentPointsMap.getOrDefault(s.getId(), 0);
-                int finalPoints = Math.max(basePts, calculatedPts);
-
-                entries.add(LeaderboardEntryDTO.builder()
-                        .studentId(s.getId())
-                        .studentCode(s.getStudentCode())
-                        .studentName(s.getName())
-                        .department(s.getDepartment() != null ? s.getDepartment() : "General")
-                        .points(finalPoints)
-                        .communityId(communityId)
-                        .communityName(communityName)
-                        .build());
-            }
-        }
-
-        // Fallback: If no specific community members exist, include all students from studentRepository
-        if (entries.isEmpty()) {
-            List<Student> allStudents = studentRepository.findAll();
-            for (Student s : allStudents) {
                 int basePts = s.getPoints() != null ? s.getPoints() : 0;
                 int calculatedPts = studentPointsMap.getOrDefault(s.getId(), 0);
                 int finalPoints = Math.max(basePts, calculatedPts);
