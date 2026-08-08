@@ -82,8 +82,8 @@ const MyCommunitiesPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {myMemberships.map((m) => {
             const matchedComm = communities.find((c) => c.id === m.communityId);
-            const facultyLead = matchedComm?.facultyCoordinator || 'Dr. Faculty Lead';
-            const studentLead = matchedComm?.studentCoordinator || 'Student Coordinator';
+            const facultyLead = matchedComm?.facultyCoordinator || 'Dr. Admin Lead';
+            const studentLead = matchedComm?.studentCoordinator || 'Faculty Head';
 
             return (
               <div
@@ -124,7 +124,7 @@ const MyCommunitiesPage = () => {
                       <strong className="text-slate-800 font-bold">{facultyLead}</strong>
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
-                      <span>Student Coordinator:</span>
+                      <span>Faculty Head:</span>
                       <strong className="text-slate-800 font-bold">{studentLead}</strong>
                     </div>
                   </div>

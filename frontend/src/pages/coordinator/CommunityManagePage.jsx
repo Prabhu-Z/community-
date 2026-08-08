@@ -134,7 +134,7 @@ const CommunityManagePage = () => {
           <div className="space-y-2">
             <h2 className="text-[#7c3aed]xl font-extrabold text-slate-900">No Communities Assigned</h2>
             <p className="text-xs md:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-              You currently have no assigned community. Please contact your Faculty Admin to be assigned as a Community Coordinator.
+              You currently have no assigned community. Please contact your Super Admin to be assigned as a Faculty Coordinator.
             </p>
           </div>
         </div>
@@ -208,7 +208,7 @@ const CommunityManagePage = () => {
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 uppercase tracking-wider mb-1">Student Coordinator</label>
+                <label className="block font-semibold text-slate-700 uppercase tracking-wider mb-1">Faculty Head</label>
                 <input
                   type="text"
                   value={formData.studentCoordinator || ''}
@@ -234,7 +234,7 @@ const CommunityManagePage = () => {
             </div>
             <p className="text-xs text-slate-600 leading-relaxed pt-2">{community.description}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100 text-xs text-slate-700">
-              <div><strong>Faculty Lead:</strong> {community.facultyCoordinator || 'Unassigned'}</div>
+              <div><strong>Admin Lead:</strong> {community.facultyCoordinator || 'Unassigned'}</div>
               <div><strong>Student Lead:</strong> {community.studentCoordinator || 'Unassigned'}</div>
             </div>
           </div>

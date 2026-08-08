@@ -44,7 +44,7 @@ const CommunitiesPage = () => {
       return;
     }
     if (user?.role === 'ROLE_COMMUNITY_COORDINATOR') {
-      alert('Community Coordinators are restricted to coordinating a single community and cannot join other communities.');
+      alert('Faculty Coordinators are restricted to coordinating a single community and cannot join other communities.');
       return;
     }
     try {
@@ -107,7 +107,7 @@ const CommunitiesPage = () => {
         <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-4 rounded-2xl border border-[#8b5cf6]/30 flex items-center gap-3 text-xs text-[#7c3aed]">
           <ShieldAlert className="w-5 h-5 flex-shrink-0 text-[#7c3aed]" />
           <span>
-            <strong>Coordinator Restriction:</strong> As a Community Coordinator, you are dedicated to coordinating 1 community only and cannot apply to join other communities.
+            <strong>Coordinator Restriction:</strong> As a Faculty Coordinator, you are dedicated to coordinating 1 community only and cannot apply to join other communities.
           </span>
         </div>
       )}
@@ -162,7 +162,7 @@ const CommunitiesPage = () => {
                     <strong>Faculty Coordinator:</strong> {c.facultyCoordinator || 'Unassigned'}
                   </div>
                   <div>
-                    <strong>Student Coordinator:</strong> {c.studentCoordinator || 'Unassigned'}
+                    <strong>Faculty Head:</strong> {c.studentCoordinator || 'Unassigned'}
                   </div>
                 </div>
               </div>

@@ -117,10 +117,10 @@ const Sidebar = ({ isOpen, onClose }) => {
   ];
 
   const facultyLinks = [
-    { to: '/faculty/dashboard', icon: LayoutDashboard, label: 'College Dashboard' },
+    { to: '/faculty/dashboard', icon: LayoutDashboard, label: 'Admin Dashboard' },
     { to: '/faculty/leaderboards', icon: Trophy, label: 'Campus Leaderboards' },
     { to: '/faculty/communities', icon: Users, label: 'All 30+ Communities' },
-    { to: '/faculty/coordinator-search', icon: UserCheck, label: 'Coordinator Search' },
+    { to: '/faculty/coordinator-search', icon: UserCheck, label: 'Faculty Search' },
     { to: '/faculty/student-search', icon: Search, label: 'Student Search' },
     { to: '/faculty/analytics', icon: BarChart3, label: 'Participation Analytics' },
     { to: '/faculty/reports', icon: FileText, label: 'College Reports' },
@@ -154,8 +154,8 @@ const Sidebar = ({ isOpen, onClose }) => {
             {role === 'ROLE_FACULTY' && <Sparkles className="w-5 h-5 text-[#8b5cf6]" />}
             <h2 className="text-sm font-bold text-slate-800 tracking-tight">
               {role === 'ROLE_STUDENT' && 'Student Workspace'}
-              {role === 'ROLE_COMMUNITY_COORDINATOR' && 'Coordinator Workspace'}
-              {role === 'ROLE_FACULTY' && 'Faculty Workspace'}
+              {role === 'ROLE_COMMUNITY_COORDINATOR' && 'Faculty Workspace'}
+              {role === 'ROLE_FACULTY' && 'Admin Workspace'}
             </h2>
           </div>
           <p className="text-[10px] text-[#8b5cf6] font-semibold mt-1 font-mono uppercase tracking-wider">SCTS Campus Platform</p>

@@ -174,7 +174,7 @@ const AnalyticsView = () => {
                 {analytics.communityName}
               </h2>
               <p className="text-xs text-slate-600 font-medium mt-1">
-                Category: <strong className="text-slate-800">{analytics.category}</strong> • Student Coordinator: <strong className="text-slate-800">{analytics.studentCoordinator || 'Assigned'}</strong>
+                Category: <strong className="text-slate-800">{analytics.category}</strong> • Faculty Head: <strong className="text-slate-800">{analytics.studentCoordinator || 'Assigned'}</strong>
               </p>
             </div>
 

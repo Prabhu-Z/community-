@@ -313,7 +313,7 @@ const StudentTasksPage = () => {
           <div>
             <h3 className="text-lg font-bold text-slate-900">No Tasks Matching Filter ({statusFilter})</h3>
             <p className="text-xs text-slate-600/60 mt-1 max-w-md mx-auto">
-              Tasks assigned by your Community Coordinator appear strictly after joining that community!
+              Tasks assigned by your Faculty Coordinator appear strictly after joining that community!
             </p>
           </div>
         </div>

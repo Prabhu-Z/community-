@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
@@ -7,6 +8,7 @@ import CommunityDetailModal from '../../components/common/CommunityDetailModal';
 import { Search, Plus, UserCheck, Eye, KeyRound, CheckCircle2, ShieldCheck, Crown, Users, Upload, FileSpreadsheet, Download, AlertTriangle, Building2 } from 'lucide-react';
 
 const AllCommunitiesView = () => {
+  const navigate = useNavigate();
   const [communities, setCommunities] = useState([]);
   const [staffUsers, setStaffUsers] = useState([]);
   const [allUsersList, setAllUsersList] = useState([]);
@@ -24,7 +26,7 @@ const AllCommunitiesView = () => {
     category: 'TECHNICAL',
     description: '',
     maxSize: 100,
-    facultyCoordinator: 'Dr. Faculty Lead',
+    facultyCoordinator: 'Dr. Admin Lead',
     studentCoordinator: 'Student Lead',
     status: 'ACTIVE',
   });
@@ -104,8 +106,7 @@ const AllCommunitiesView = () => {
   };
 
   const handleOpenDetailModal = (community) => {
-    setActiveCommunity(community);
-    setDetailModal(true);
+    navigate(`/faculty/communities/${community.id}`);
   };
 
   const handleCreateCommunity = async (e) => {
@@ -123,7 +124,7 @@ const AllCommunitiesView = () => {
         category: 'TECHNICAL',
         description: '',
         maxSize: 100,
-        facultyCoordinator: 'Dr. Faculty Lead',
+        facultyCoordinator: 'Dr. Admin Lead',
         studentCoordinator: 'Student Lead',
         status: 'ACTIVE',
       });
@@ -331,7 +332,7 @@ const AllCommunitiesView = () => {
       <div className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
         <div>
           <span className="text-xs font-bold text-[#7c3aed] uppercase tracking-widest flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-[#8b5cf6]" /> Faculty Governance & Oversight
+            <ShieldCheck className="w-4 h-4 text-[#8b5cf6]" /> Admin Governance & Oversight
           </span>
           <h1 className="text-3xl font-extrabold text-slate-900 mt-1">All College Communities</h1>
           <p className="text-xs text-slate-600 mt-1">
@@ -393,7 +394,7 @@ const AllCommunitiesView = () => {
             <div className="space-y-3 pt-4 border-t border-slate-100">
               <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
                 <div>
-                  <strong className="text-slate-800">Faculty Lead:</strong> {c.facultyCoordinator || 'Unassigned'}
+                  <strong className="text-slate-800">Admin Lead:</strong> {c.facultyCoordinator || 'Unassigned'}
                 </div>
                 <div>
                   <strong className="text-slate-800">Student Lead:</strong> {c.studentCoordinator || 'Unassigned'}
@@ -420,21 +421,6 @@ const AllCommunitiesView = () => {
                   style={{ width: `${Math.min(100, Math.round(((c.memberCount || 0) / (c.maxSize || 100)) * 100))}%` }}
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  onClick={(e) => handleOpenAssignModal(e, c)}
-                  className="py-2 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold flex items-center justify-center gap-1 transition"
-                >
-                  <UserCheck className="w-3.5 h-3.5" /> Edit Leadership
-                </button>
-                <button
-                  onClick={(e) => handleOpenImportModal(e, c)}
-                  className="py-2 px-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-[#7c3aed] border border-purple-200 text-[11px] font-bold flex items-center justify-center gap-1 transition"
-                >
-                  <Upload className="w-3.5 h-3.5" /> Bulk Import
-                </button>
-              </div>
             </div>
           </div>
         ))}
@@ -445,13 +431,15 @@ const AllCommunitiesView = () => {
         isOpen={detailModal}
         onClose={() => setDetailModal(false)}
         community={activeCommunity}
+        onOpenAssignModal={(comm) => handleOpenAssignModal({ stopPropagation: () => {} }, comm)}
+        onOpenImportModal={(comm) => handleOpenImportModal({ stopPropagation: () => {} }, comm)}
       />
 
       {/* Modal: Grant Coordinator Access By Email */}
       <Modal isOpen={grantModal} onClose={() => setGrantModal(false)} title="Grant Coordinator Role by Email">
         <form onSubmit={handleGrantAccessByEmail} className="space-y-4 text-xs">
           <div className="p-3.5 rounded-xl bg-white/5 border border-slate-200 text-xs text-[#7c3aed]">
-            Grant <strong>Community Coordinator</strong> access to a registered user by entering their email address (e.g. <code>student@scts.edu</code>). Name auto-fills upon typing a registered email address.
+            Grant <strong>Faculty Coordinator</strong> access to a registered user by entering their email address (e.g. <code>student@scts.edu</code>). Name auto-fills upon typing a registered email address.
           </div>
 
           {grantSuccess && (
@@ -585,12 +573,12 @@ const AllCommunitiesView = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">Faculty Lead Name</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Admin Lead Name</label>
               <input
                 type="text"
                 value={newCommunity.facultyCoordinator}
                 onChange={(e) => setNewCommunity({ ...newCommunity, facultyCoordinator: e.target.value })}
-                placeholder="Dr. Faculty Lead Name"
+                placeholder="Dr. Admin Lead Name"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-[#8b5cf6]"
               />
             </div>
@@ -680,7 +668,7 @@ const AllCommunitiesView = () => {
             </p>
           </div>
 
-          {/* 1. Unassigned Coordinators Dropdown -> Auto-fills Faculty Lead (Name Only) */}
+          {/* 1. Unassigned Coordinators Dropdown -> Auto-fills Admin Lead (Name Only) */}
           <div>
             <label className="block text-xs font-bold text-[#7c3aed] mb-1">
               Select Unassigned Coordinator Staff Member ({availableStaffUsers.length} Available)
@@ -745,7 +733,7 @@ const AllCommunitiesView = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1">Faculty Lead / Staff Advisor (Name Only)</label>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Admin Lead / Staff Advisor (Name Only)</label>
             <input
               type="text"
               required
@@ -757,7 +745,7 @@ const AllCommunitiesView = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1">Student Coordinator / Head (Optional)</label>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Faculty Head / Head (Optional)</label>
             <input
               type="text"
               value={assignData.studentCoordinator}

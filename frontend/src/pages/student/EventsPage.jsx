@@ -127,7 +127,7 @@ const EventsPage = () => {
       };
 
       await api.post(`/events/propose?leaderStudentName=${encodeURIComponent(user?.name || 'Student Leader')}`, payload);
-      alert('✨ Event proposal submitted successfully! It has been sent to your Community Coordinator for verification & approval.');
+      alert('✨ Event proposal submitted successfully! It has been sent to your Faculty Coordinator for verification & approval.');
       setShowProposeModal(false);
       fetchEventsAndMemberships();
     } catch (err) {

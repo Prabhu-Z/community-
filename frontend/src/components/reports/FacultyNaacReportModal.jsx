@@ -122,7 +122,7 @@ const FacultyNaacReportModal = ({ isOpen, onClose, reportData }) => {
           {/* Signatures */}
           <div className="pt-8 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 print:border-black/20 print:text-black">
             <div>
-              <p className="font-bold">Faculty Admin / Dean Signature</p>
+              <p className="font-bold">Super Admin / Dean Signature</p>
               <p className="text-[10px] opacity-60 font-mono">Verified by SCTS System Engine</p>
             </div>
             <div className="text-right">

@@ -24,13 +24,12 @@ const Navbar = ({ onToggleSidebar }) => {
       case 'ROLE_COMMUNITY_COORDINATOR':
         return (
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-[#7c3aed]/20 text-[#6d28d9] border border-[#7c3aed]/40 flex items-center gap-1 shadow-sm">
-            <ShieldCheck className="w-3 h-3 text-[#6d28d9]" /> COORDINATOR
-          </span>
+            <ShieldCheck className="w-3 h-3 text-[#6d28d9]" />ADMIN</span>
         );
       case 'ROLE_FACULTY':
         return (
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-purple-100 text-purple-800 border border-purple-300 flex items-center gap-1 shadow-sm">
-            <Sparkles className="w-3 h-3 text-purple-600" /> FACULTY OVERSIGHT
+            <Sparkles className="w-3 h-3 text-purple-600" /> ADMIN OVERSIGHT
           </span>
         );
       default:

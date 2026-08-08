@@ -53,7 +53,7 @@ const CoordinatorLeaderboardPage = () => {
           <div className="space-y-2">
             <h2 className="text-2xl font-extrabold text-slate-900">No Communities Assigned</h2>
             <p className="text-xs md:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-              You currently have no assigned community. Please contact your Faculty Admin to be assigned as a Community Coordinator.
+              You currently have no assigned community. Please contact your Super Admin to be assigned as a Faculty Coordinator.
             </p>
           </div>
         </div>

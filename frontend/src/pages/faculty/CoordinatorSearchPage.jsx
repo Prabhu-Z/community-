@@ -149,10 +149,10 @@ const CoordinatorSearchPage = () => {
       <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 lg:p-8 rounded-3xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xl">
         <div>
           <span className="text-xs font-bold text-[#7c3aed] uppercase tracking-widest flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-[#7c3aed]" /> Faculty Governance & Staff Directory
+            <ShieldCheck className="w-4 h-4 text-[#7c3aed]" /> Admin Governance & Staff Directory
           </span>
           <h1 className="text-3xl font-extrabold text-slate-900 mt-1">
-            Coordinator Search & Reassignment
+            Faculty Search & Reassignment
           </h1>
           <p className="text-xs text-slate-600 mt-1">
             Reassigning a coordinator to a new community automatically clears all previous community ties for a clean slate.
@@ -179,8 +179,8 @@ const CoordinatorSearchPage = () => {
             className="w-full sm:w-auto px-4 py-2 rounded-xl bg-white/5 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-[#8b5cf6]"
           >
             <option value="ALL" className="bg-white text-slate-900">All Roles</option>
-            <option value="ROLE_COMMUNITY_COORDINATOR" className="bg-white text-slate-900">Community Coordinators</option>
-            <option value="ROLE_FACULTY" className="bg-white text-slate-900">Faculty Leads</option>
+            <option value="ROLE_COMMUNITY_COORDINATOR" className="bg-white text-slate-900">Faculty Coordinators</option>
+            <option value="ROLE_FACULTY" className="bg-white text-slate-900">Admin Leads</option>
           </select>
         </div>
       </div>

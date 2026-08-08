@@ -169,7 +169,7 @@ const MyLeaderGroupPage = () => {
           <div className="space-y-2">
             <h2 className="text-[#7c3aed]xl font-extrabold text-slate-900">Student Leader Workspace Reserved</h2>
             <p className="text-xs md:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-              The "My Leader Group" workspace is restricted to designated Student Leaders, Team Leads, and Student Coordinators. Regular members can browse open groups and join teams under Group Openings!
+              The "My Leader Group" workspace is restricted to designated Student Leaders, Team Leads, and Faculty Heads. Regular members can browse open groups and join teams under Group Openings!
             </p>
           </div>
           <Link
@@ -241,7 +241,7 @@ const MyLeaderGroupPage = () => {
                 ⏳ Group Creation Request Pending Approval
               </div>
               <p className="leading-relaxed text-amber-800">
-                Your request to create <strong>"{activeGroup.groupName}"</strong> has been submitted to your Community Coordinator for review. Once accepted, your group will go live in <strong>Group Openings</strong> for regular students to join!
+                Your request to create <strong>"{activeGroup.groupName}"</strong> has been submitted to your Faculty Coordinator for review. Once accepted, your group will go live in <strong>Group Openings</strong> for regular students to join!
               </p>
             </div>
           )}
@@ -252,7 +252,7 @@ const MyLeaderGroupPage = () => {
                 ❌ Group Creation Request Declined
               </div>
               <p className="leading-relaxed text-rose-800">
-                Your request to create <strong>"{activeGroup.groupName}"</strong> was declined by the Community Coordinator. You may delete this group and re-submit a new request.
+                Your request to create <strong>"{activeGroup.groupName}"</strong> was declined by the Faculty Coordinator. You may delete this group and re-submit a new request.
               </p>
             </div>
           )}

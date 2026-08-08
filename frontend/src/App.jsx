@@ -45,6 +45,7 @@ import CoordinatorReportsPage from './pages/coordinator/CoordinatorReportsPage';
 import FacultyDashboard from './pages/faculty/FacultyDashboard';
 import FacultyLeaderboardPage from './pages/faculty/FacultyLeaderboardPage';
 import AllCommunitiesView from './pages/faculty/AllCommunitiesView';
+import FacultyCommunityDetailPage from './pages/faculty/FacultyCommunityDetailPage';
 import CoordinatorSearchPage from './pages/faculty/CoordinatorSearchPage';
 import StudentSearchPage from './pages/faculty/StudentSearchPage';
 import StudentDetailPortfolio from './pages/faculty/StudentDetailPortfolio';
@@ -144,6 +145,7 @@ const App = () => {
         <Route path="/faculty/dashboard" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><FacultyDashboard /></ProtectedRoute>} />
         <Route path="/faculty/leaderboards" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><FacultyLeaderboardPage /></ProtectedRoute>} />
         <Route path="/faculty/communities" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><AllCommunitiesView /></ProtectedRoute>} />
+        <Route path="/faculty/communities/:id" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><FacultyCommunityDetailPage /></ProtectedRoute>} />
         <Route path="/faculty/coordinator-search" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><CoordinatorSearchPage /></ProtectedRoute>} />
         <Route path="/faculty/student-search" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><StudentSearchPage /></ProtectedRoute>} />
         <Route path="/faculty/students/:id" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><StudentDetailPortfolio /></ProtectedRoute>} />

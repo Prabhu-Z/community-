@@ -116,7 +116,7 @@ const CoordinatorDashboard = () => {
     }
   };
 
-  if (loading) return <LoadingSpinner label="Loading Community Coordinator Control Panel..." />;
+  if (loading) return <LoadingSpinner label="Loading Faculty Coordinator Control Panel..." />;
 
   if (!data || !data.community) {
     return (
@@ -126,7 +126,7 @@ const CoordinatorDashboard = () => {
           <div className="space-y-2">
             <h2 className="text-[#7c3aed]xl font-extrabold text-slate-900">No Communities Assigned</h2>
             <p className="text-xs md:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-              You currently have no assigned community. Please contact your Faculty Admin to be assigned as a Community Coordinator.
+              You currently have no assigned community. Please contact your Super Admin to be assigned as a Faculty Coordinator.
             </p>
           </div>
         </div>
@@ -158,7 +158,7 @@ const CoordinatorDashboard = () => {
       <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 lg:p-8 rounded-3xl border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl">
         <div>
           <span className="text-xs font-bold text-[#7c3aed] uppercase tracking-widest flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-[#7c3aed]" /> Community Coordinator Operations
+            <Sparkles className="w-4 h-4 text-[#7c3aed]" /> Faculty Coordinator Operations
           </span>
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mt-1">
             {data.community.name}

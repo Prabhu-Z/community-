@@ -80,7 +80,7 @@ const StudentActivityRequestsPage = () => {
       };
 
       await api.post('/activity-requests', payload);
-      alert('🎉 Activity Achievement Request submitted! Your Community Coordinator will review & grant gamification points.');
+      alert('🎉 Activity Achievement Request submitted! Your Faculty Coordinator will review & grant gamification points.');
       setShowModal(false);
       setFormData({
         communityId: userMemberships.length > 0 ? userMemberships[0].communityId : '',
@@ -116,7 +116,7 @@ const StudentActivityRequestsPage = () => {
           </span>
           <h1 className="font-sans text-3xl font-extrabold text-slate-900 mt-1">Activity Requests</h1>
           <p className="text-xs text-slate-600 mt-1">
-            Submit external hackathon wins, research papers, certifications, and projects to your Community Coordinator for point awards.
+            Submit external hackathon wins, research papers, certifications, and projects to your Faculty Coordinator for point awards.
           </p>
         </div>
 
@@ -240,7 +240,7 @@ const StudentActivityRequestsPage = () => {
             <div>
               <h4 className="text-base font-bold text-slate-900">No Activity Claims Submitted Yet</h4>
               <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto">
-                Have you won a hackathon, earned a technical certification, or completed an external project? Submit an activity claim to your Community Coordinator for point awards!
+                Have you won a hackathon, earned a technical certification, or completed an external project? Submit an activity claim to your Faculty Coordinator for point awards!
               </p>
             </div>
           </div>
