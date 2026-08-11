@@ -11,6 +11,7 @@ import RegisterPage from './pages/auth/RegisterPage';
 
 // Student Pages
 import StudentProfilePage from './pages/student/StudentProfilePage';
+import StudentProfileLinksPage from './pages/student/StudentProfileLinksPage';
 import MyCommunitiesPage from './pages/student/MyCommunitiesPage';
 import StudentTasksPage from './pages/student/StudentTasksPage';
 import StudentActivityRequestsPage from './pages/student/StudentActivityRequestsPage';
@@ -25,6 +26,8 @@ import CertificatesPage from './pages/student/CertificatesPage';
 import NotificationsPage from './pages/student/NotificationsPage';
 import MyLeaderGroupPage from './pages/student/MyLeaderGroupPage';
 import GroupOpeningsPage from './pages/student/GroupOpeningsPage';
+import StudentResourcesPage from './pages/student/StudentResourcesPage';
+import CalendarPage from './pages/student/CalendarPage';
 
 // Coordinator Pages
 import CoordinatorDashboard from './pages/coordinator/CoordinatorDashboard';
@@ -43,6 +46,7 @@ import CoordinatorReportsPage from './pages/coordinator/CoordinatorReportsPage';
 
 // Faculty Pages
 import FacultyDashboard from './pages/faculty/FacultyDashboard';
+import FacultyTasksPage from './pages/faculty/FacultyTasksPage';
 import FacultyLeaderboardPage from './pages/faculty/FacultyLeaderboardPage';
 import AllCommunitiesView from './pages/faculty/AllCommunitiesView';
 import FacultyCommunityDetailPage from './pages/faculty/FacultyCommunityDetailPage';
@@ -51,6 +55,8 @@ import StudentSearchPage from './pages/faculty/StudentSearchPage';
 import StudentDetailPortfolio from './pages/faculty/StudentDetailPortfolio';
 import AnalyticsView from './pages/faculty/AnalyticsView';
 import FacultyReportsPage from './pages/faculty/FacultyReportsPage';
+import FacultyMembershipRequestsPage from './pages/faculty/FacultyMembershipRequestsPage';
+import FacultyResourcesPage from './pages/faculty/FacultyResourcesPage';
 
 // Flexible Protected Route Guard Component
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -58,9 +64,12 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   if (!user) return <Navigate to="/login" replace />;
   if (allowedRole) {
     const userRole = String(user.role || '').toUpperCase();
-    const targetRole = String(allowedRole).toUpperCase();
-    const rawRole = targetRole.replace('ROLE_', '');
-    if (userRole !== targetRole && userRole !== rawRole) {
+    const targetRoles = String(allowedRole).toUpperCase().split(',').map(r => r.trim());
+    const isAllowed = targetRoles.some(tr => {
+      const rawRole = tr.replace('ROLE_', '');
+      return userRole === tr || userRole === rawRole;
+    });
+    if (!isAllowed) {
       return <Navigate to="/" replace />;
     }
   }
@@ -110,6 +119,7 @@ const App = () => {
 
         {/* Student Protected Routes */}
         <Route path="/student/dashboard" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><StudentProfilePage /></ProtectedRoute>} />
+        <Route path="/student/profile-links" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><StudentProfileLinksPage /></ProtectedRoute>} />
         <Route path="/student/profile" element={<Navigate to="/student/dashboard" replace />} />
         <Route path="/student/my-communities" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><MyCommunitiesPage /></ProtectedRoute>} />
         <Route path="/student/tasks" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><StudentTasksPage /></ProtectedRoute>} />
@@ -117,6 +127,7 @@ const App = () => {
         <Route path="/student/leaderboard" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><StudentLeaderboardPage /></ProtectedRoute>} />
         <Route path="/student/communities" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><CommunitiesPage /></ProtectedRoute>} />
         <Route path="/student/events" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><EventsPage /></ProtectedRoute>} />
+        <Route path="/student/calendar" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><CalendarPage /></ProtectedRoute>} />
         <Route path="/student/attendance" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><AttendancePage /></ProtectedRoute>} />
         <Route path="/student/timeline" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><ActivityTimelinePage /></ProtectedRoute>} />
         <Route path="/student/volunteer-hours" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><VolunteerHoursPage /></ProtectedRoute>} />
@@ -125,6 +136,7 @@ const App = () => {
         <Route path="/student/notifications" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><NotificationsPage /></ProtectedRoute>} />
         <Route path="/student/group-openings" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><GroupOpeningsPage /></ProtectedRoute>} />
         <Route path="/student/my-leader-group" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><MyLeaderGroupPage /></ProtectedRoute>} />
+        <Route path="/student/resources" element={<ProtectedRoute allowedRole="ROLE_STUDENT"><StudentResourcesPage /></ProtectedRoute>} />
 
         {/* Coordinator Protected Routes */}
         <Route path="/coordinator/dashboard" element={<ProtectedRoute allowedRole="ROLE_COMMUNITY_COORDINATOR"><CoordinatorDashboard /></ProtectedRoute>} />
@@ -143,14 +155,17 @@ const App = () => {
 
         {/* Faculty Protected Routes */}
         <Route path="/faculty/dashboard" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><FacultyDashboard /></ProtectedRoute>} />
+        <Route path="/faculty/tasks" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><FacultyTasksPage /></ProtectedRoute>} />
         <Route path="/faculty/leaderboards" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><FacultyLeaderboardPage /></ProtectedRoute>} />
         <Route path="/faculty/communities" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><AllCommunitiesView /></ProtectedRoute>} />
         <Route path="/faculty/communities/:id" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><FacultyCommunityDetailPage /></ProtectedRoute>} />
         <Route path="/faculty/coordinator-search" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><CoordinatorSearchPage /></ProtectedRoute>} />
         <Route path="/faculty/student-search" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><StudentSearchPage /></ProtectedRoute>} />
-        <Route path="/faculty/students/:id" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><StudentDetailPortfolio /></ProtectedRoute>} />
-        <Route path="/faculty/analytics" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><AnalyticsView /></ProtectedRoute>} />
+        <Route path="/faculty/students/:id" element={<ProtectedRoute><StudentDetailPortfolio /></ProtectedRoute>} />
+        <Route path="/faculty/analytics" element={<ProtectedRoute allowedRole="ROLE_FACULTY,ROLE_COMMUNITY_COORDINATOR"><AnalyticsView /></ProtectedRoute>} />
         <Route path="/faculty/reports" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><FacultyReportsPage /></ProtectedRoute>} />
+        <Route path="/faculty/membership-requests" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><FacultyMembershipRequestsPage /></ProtectedRoute>} />
+        <Route path="/faculty/resources" element={<ProtectedRoute allowedRole="ROLE_FACULTY"><FacultyResourcesPage /></ProtectedRoute>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

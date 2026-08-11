@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
-import QRCodeTicketModal from '../../components/common/QRCodeTicketModal';
+import Modal from '../../components/common/Modal';
 import { Calendar, MapPin, Clock, Users, CheckCircle2, PlusCircle, Send, Crown, ShieldAlert, UserCheck, Eye, GraduationCap, FolderKanban, Globe, Lock, QrCode } from 'lucide-react';
 
 const EventsPage = () => {
@@ -19,7 +19,6 @@ const EventsPage = () => {
 
   // Registered Students Modal & QR Code Pass State
   const [selectedEventForRegs, setSelectedEventForRegs] = useState(null);
-  const [qrModalEvent, setQrModalEvent] = useState(null);
   const [registrations, setRegistrations] = useState([]);
   const [loadingRegs, setLoadingRegs] = useState(false);
 
@@ -31,6 +30,7 @@ const EventsPage = () => {
     eventScope: 'COMMUNITY_EVENT',
     duration: '2 Hours',
     eventDate: new Date().toISOString().split('T')[0],
+    registrationDeadline: new Date().toISOString().split('T')[0],
     venue: '',
     time: '10:00 AM',
     maxParticipants: 100
@@ -42,9 +42,6 @@ const EventsPage = () => {
 
   const fetchEventsAndMemberships = async () => {
     try {
-      const res = await api.get(`/events${user?.studentId ? `?studentId=${user.studentId}` : ''}`);
-      setEvents(res.data || []);
-
       const commRes = await api.get('/communities');
       const commList = commRes.data || [];
       setAllCommunities(commList);
@@ -53,6 +50,15 @@ const EventsPage = () => {
       let studentIdToUse = user?.studentId;
 
       if (!studentIdToUse && user?.id) {
+        try {
+          const studentProfileRes = await api.get(`/students/user/${user.id}`);
+          if (studentProfileRes.data && studentProfileRes.data.id) {
+            studentIdToUse = studentProfileRes.data.id;
+          }
+        } catch (e) {
+          console.warn('Could not fetch student profile:', e);
+        }
+
         try {
           const userMemRes = await api.get(`/memberships/user/${user.id}`);
           approvedMems = (userMemRes.data || []).filter(m => m.status === 'APPROVED');
@@ -69,6 +75,10 @@ const EventsPage = () => {
       }
 
       setUserMemberships(approvedMems);
+
+      // Now query events with studentIdToUse
+      const res = await api.get(`/events${studentIdToUse ? `?studentId=${studentIdToUse}` : ''}`);
+      setEvents(res.data || []);
 
       const leaderMem = approvedMems.find(
         m => String(m.role).toUpperCase().includes('COORDINATOR') ||
@@ -155,6 +165,10 @@ const EventsPage = () => {
   const filteredEvents = events.filter((evt) => {
     if (evt.status === 'PENDING_APPROVAL' || evt.status === 'REJECTED') return false;
 
+    if (scopeFilter === 'REGISTERED') {
+      return evt.isUserRegistered;
+    }
+
     const isGlobal = evt.eventScope === 'GLOBAL_EVENT';
     if (scopeFilter === 'GLOBAL_EVENT' && !isGlobal) return false;
     if (scopeFilter === 'COMMUNITY_EVENT' && isGlobal) return false;
@@ -226,6 +240,17 @@ const EventsPage = () => {
         >
           <Lock className="w-3.5 h-3.5" /> 🔒 Community Events (Members Only)
         </button>
+
+        <button
+          onClick={() => setScopeFilter('REGISTERED')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+            scopeFilter === 'REGISTERED'
+              ? 'bg-gradient-to-r from-[#8b5cf6] to-purple-600 text-black shadow-sm font-extrabold'
+              : 'bg-white/5 text-slate-800 hover:text-[#7c3aed] border border-slate-200'
+          }`}
+        >
+          <UserCheck className="w-3.5 h-3.5" /> Registered & Nominated ({events.filter(e => e.isUserRegistered).length})
+        </button>
       </div>
 
       {/* Events Grid */}
@@ -254,6 +279,13 @@ const EventsPage = () => {
                         {isGlobal ? <Globe className="w-3 h-3 text-purple-400" /> : <Lock className="w-3 h-3 text-sky-400" />}
                         {isGlobal ? 'Global Event' : 'Community Event'}
                       </span>
+                      {evt.isUserRegistered && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                          evt.userRegistrationStatus === 'NOMINATED' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/30' : 'bg-indigo-500/10 text-indigo-700 border-indigo-500/30'
+                        }`}>
+                          {evt.userRegistrationStatus === 'NOMINATED' ? '⭐ Nominated' : '✓ Registered'}
+                        </span>
+                      )}
                     </div>
                     <Badge status={evt.status}>{evt.status}</Badge>
                   </div>
@@ -287,16 +319,8 @@ const EventsPage = () => {
                   </button>
 
                   {evt.isUserRegistered ? (
-                    <div className="flex-1 flex items-center gap-2">
-                      <div className="flex-1 p-2 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-500/30">
-                        <CheckCircle2 className="w-4 h-4" /> Registered
-                      </div>
-                      <button
-                        onClick={() => setQrModalEvent(evt)}
-                        className="px-3 py-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition shadow-sm text-xs font-bold flex items-center gap-1 shadow-md shrink-0"
-                      >
-                        <QrCode className="w-4 h-4" /> QR Ticket
-                      </button>
+                    <div className="flex-1 p-2 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-500/30">
+                      <CheckCircle2 className="w-4 h-4" /> Registered
                     </div>
                   ) : canRegister ? (
                     <button
@@ -334,13 +358,175 @@ const EventsPage = () => {
         </div>
       )}
 
-      {/* QR Ticket Pass Modal */}
-      <QRCodeTicketModal
-        isOpen={!!qrModalEvent}
-        onClose={() => setQrModalEvent(null)}
-        event={qrModalEvent}
-        student={user}
-      />
+      {/* Propose Event Modal */}
+      <Modal isOpen={showProposeModal} onClose={() => setShowProposeModal(false)} title="Propose New Campus Event">
+        <form onSubmit={handleProposeSubmit} className="space-y-4 text-xs text-slate-800">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Select Target Community</label>
+            <select
+              value={proposalForm.communityId}
+              onChange={(e) => setProposalForm({ ...proposalForm, communityId: parseInt(e.target.value) })}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#8b5cf6]"
+            >
+              {allCommunities
+                .filter(c => userCommunityIds.includes(c.id))
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Event Title</label>
+            <input
+              type="text"
+              required
+              value={proposalForm.title}
+              onChange={(e) => setProposalForm({ ...proposalForm, title: e.target.value })}
+              placeholder="e.g. Algorithms Hackathon 2026"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-[#8b5cf6]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
+            <textarea
+              required
+              rows={3}
+              value={proposalForm.description}
+              onChange={(e) => setProposalForm({ ...proposalForm, description: e.target.value })}
+              placeholder="Provide a detailed description of the proposed event..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-[#8b5cf6]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Event Type</label>
+              <select
+                value={proposalForm.eventType}
+                onChange={(e) => setProposalForm({ ...proposalForm, eventType: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-bold"
+              >
+                <option value="WORKSHOP">WORKSHOP</option>
+                <option value="SEMINAR">SEMINAR</option>
+                <option value="COMPETITION">COMPETITION</option>
+                <option value="HACKATHON">HACKATHON</option>
+                <option value="GUEST_LECTURE">GUEST LECTURE</option>
+                <option value="CULTURAL_MEET">CULTURAL MEET</option>
+                <option value="SPORTS_MEET">SPORTS MEET</option>
+                <option value="SOCIAL_SERVICE">SOCIAL SERVICE</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Event Scope</label>
+              <select
+                value={proposalForm.eventScope}
+                onChange={(e) => setProposalForm({ ...proposalForm, eventScope: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-bold"
+              >
+                <option value="COMMUNITY_EVENT">🔒 Community Event (Members Only)</option>
+                <option value="GLOBAL_EVENT">🌐 Global Event (Open to Campus)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Event Date</label>
+              <input
+                type="date"
+                required
+                value={proposalForm.eventDate}
+                onChange={(e) => setProposalForm({ ...proposalForm, eventDate: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-[#8b5cf6] cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Registration Deadline</label>
+              <input
+                type="date"
+                required
+                value={proposalForm.registrationDeadline}
+                onChange={(e) => setProposalForm({ ...proposalForm, registrationDeadline: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-[#8b5cf6] cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Start Time</label>
+              <input
+                type="text"
+                required
+                value={proposalForm.time}
+                onChange={(e) => setProposalForm({ ...proposalForm, time: e.target.value })}
+                placeholder="10:00 AM"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-[#8b5cf6]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Duration</label>
+              <input
+                type="text"
+                required
+                value={proposalForm.duration}
+                onChange={(e) => setProposalForm({ ...proposalForm, duration: e.target.value })}
+                placeholder="2 Hours"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-[#8b5cf6]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Venue</label>
+              <input
+                type="text"
+                required
+                value={proposalForm.venue}
+                onChange={(e) => setProposalForm({ ...proposalForm, venue: e.target.value })}
+                placeholder="Seminar Hall A"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-[#8b5cf6]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Max Registrations</label>
+              <input
+                type="number"
+                required
+                value={proposalForm.maxParticipants}
+                onChange={(e) => setProposalForm({ ...proposalForm, maxParticipants: parseInt(e.target.value) || 100 })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-[#8b5cf6]"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setShowProposeModal(false)}
+              className="px-4 py-2 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={proposalSubmitting}
+              className="px-6 py-2.5 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-extrabold text-xs shadow-sm"
+            >
+              {proposalSubmitting ? 'Submitting Proposal...' : 'Submit Proposal'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

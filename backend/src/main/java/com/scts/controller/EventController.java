@@ -22,8 +22,8 @@ public class EventController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EventDTO>> getAllEvents() {
-        return ResponseEntity.ok(eventService.getAllEvents());
+    public ResponseEntity<List<EventDTO>> getAllEvents(@RequestParam(required = false) Long studentId) {
+        return ResponseEntity.ok(eventService.getAllEvents(studentId));
     }
 
     @GetMapping("/upcoming")

@@ -87,6 +87,18 @@ public class CommunityGroupController {
         }
     }
 
+    @PostMapping("/{groupId}/approve-member")
+    public ResponseEntity<?> approveMember(
+            @PathVariable Long groupId,
+            @RequestParam Long studentId) {
+        try {
+            CommunityGroupDTO dto = groupService.approveMember(groupId, studentId);
+            return ResponseEntity.ok(dto);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @PostMapping("/{groupId}/leave")
     public ResponseEntity<CommunityGroupDTO> leaveGroup(
             @PathVariable Long groupId,
@@ -98,5 +110,29 @@ public class CommunityGroupController {
     public ResponseEntity<Void> deleteGroup(@PathVariable Long groupId) {
         groupService.deleteGroup(groupId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{groupId}/assign-leader")
+    public ResponseEntity<?> assignLeader(
+            @PathVariable Long groupId,
+            @RequestParam Long studentId) {
+        try {
+            CommunityGroupDTO dto = groupService.assignLeader(groupId, studentId);
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{groupId}/assign-member")
+    public ResponseEntity<?> assignMember(
+            @PathVariable Long groupId,
+            @RequestParam Long studentId) {
+        try {
+            CommunityGroupDTO dto = groupService.assignMember(groupId, studentId);
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 }

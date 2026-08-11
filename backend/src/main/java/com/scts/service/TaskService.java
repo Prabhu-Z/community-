@@ -5,6 +5,7 @@ import com.scts.dto.TaskAssignmentDTO;
 import com.scts.dto.TaskSubmissionDTO;
 import com.scts.entity.*;
 import com.scts.exception.ResourceNotFoundException;
+import com.scts.exception.BadRequestException;
 import com.scts.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -46,9 +47,9 @@ public class TaskService {
                 .description(dto.getDescription())
                 .targetYear(dto.getTargetYear() != null ? dto.getTargetYear() : "ALL")
                 .deadline(dto.getDeadline())
-                .status("ASSIGNED")
-                .taskType("DAILY_TASK")
-                .assignedByFacultyName(null)
+                .status(dto.getStatus() != null ? dto.getStatus() : "ASSIGNED")
+                .taskType(dto.getTaskType() != null ? dto.getTaskType() : "DAILY_TASK")
+                .assignedByFacultyName(dto.getAssignedByFacultyName())
                 .community(community)
                 .build();
 
@@ -252,10 +253,38 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    private boolean isDeadlinePassed(String deadlineStr) {
+        if (deadlineStr == null || deadlineStr.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            String clean = deadlineStr.replace("T", " ").trim();
+            if (clean.length() >= 16) {
+                java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                java.time.LocalDateTime deadlineTime = java.time.LocalDateTime.parse(clean.substring(0, 16), formatter);
+                return java.time.LocalDateTime.now().isAfter(deadlineTime);
+            }
+            if (clean.length() >= 10) {
+                java.time.LocalDate deadlineDate = java.time.LocalDate.parse(clean.substring(0, 10));
+                return java.time.LocalDate.now().isAfter(deadlineDate);
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing task deadline: " + deadlineStr);
+        }
+        return false;
+    }
+
     @Transactional
     public TaskSubmissionDTO submitTaskProof(Long submissionId, String proofLink, String proofFileName, String proofFileUrl) {
         TaskSubmission submission = taskSubmissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("TaskSubmission", "id", submissionId));
+
+        if (submission.getTaskAssignment() != null) {
+            String dl = submission.getTaskAssignment().getDeadline();
+            if (isDeadlinePassed(dl)) {
+                throw new BadRequestException("The submission deadline for this task has passed.");
+            }
+        }
 
         if ((proofLink == null || proofLink.trim().isEmpty()) &&
             (proofFileName == null || proofFileName.trim().isEmpty()) &&

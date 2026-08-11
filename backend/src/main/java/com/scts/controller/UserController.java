@@ -1,15 +1,19 @@
 package com.scts.controller;
 
+import com.scts.dto.BulkImportResultDTO;
 import com.scts.entity.Community;
 import com.scts.entity.Role;
 import com.scts.entity.User;
 import com.scts.repository.CommunityRepository;
 import com.scts.repository.UserRepository;
+import com.scts.service.FacultyImportService;
 import com.scts.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +30,9 @@ public class UserController {
     private final CommunityRepository communityRepository;
     private final NotificationService notificationService;
     private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private FacultyImportService facultyImportService;
 
     @Autowired
     public UserController(UserRepository userRepository, CommunityRepository communityRepository, NotificationService notificationService, PasswordEncoder passwordEncoder) {
@@ -84,6 +91,7 @@ public class UserController {
             if (newCommOpt.isPresent()) {
                 Community newComm = newCommOpt.get();
                 newComm.setCoordinatorUserId(userId);
+                newComm.setFacultyCoordinator(extractOnlyName(user));
                 communityRepository.save(newComm);
             }
         }
@@ -134,6 +142,8 @@ public class UserController {
             for (Community c : existingCommunities) {
                 if (user.getId().equals(c.getCoordinatorUserId())) {
                     c.setCoordinatorUserId(null);
+                    c.setFacultyCoordinator("Unassigned");
+                    c.setStudentCoordinator("Unassigned");
                     communityRepository.save(c);
                 }
             }
@@ -142,11 +152,7 @@ public class UserController {
             if (optionalCommunity.isPresent()) {
                 Community community = optionalCommunity.get();
                 community.setCoordinatorUserId(user.getId());
-                if (name != null && !name.trim().isEmpty()) {
-                    community.setStudentCoordinator(name);
-                } else {
-                    community.setStudentCoordinator(email);
-                }
+                community.setFacultyCoordinator(extractOnlyName(user));
                 communityRepository.save(community);
             }
         }
@@ -165,5 +171,35 @@ public class UserController {
         response.put("role", user.getRole().name());
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/bulk-import-faculty")
+    public ResponseEntity<?> bulkImportFaculty(@RequestParam("file") MultipartFile file) {
+        try {
+            BulkImportResultDTO result = facultyImportService.importFaculty(file);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error importing faculty coordinators: " + e.getMessage()));
+        }
+    }
+
+    private String extractOnlyName(User u) {
+        if (u == null) return "Unassigned";
+        String email = u.getEmail();
+        if (email != null && email.contains("@")) {
+            String rawUsername = email.split("@")[0];
+            String[] parts = rawUsername.split("\\.");
+            StringBuilder sb = new StringBuilder();
+            for (String part : parts) {
+                if (!part.isEmpty()) {
+                    sb.append(Character.toUpperCase(part.charAt(0)))
+                      .append(part.substring(1))
+                      .append(" ");
+                }
+            }
+            return sb.toString().trim();
+        }
+        return email != null ? email : "Faculty Advisor";
     }
 }

@@ -25,7 +25,7 @@ public class CommunityGroup {
     private Community community;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "leader_student_id", nullable = false)
+    @JoinColumn(name = "leader_student_id", nullable = true)
     private Student leaderStudent;
 
     @Column(nullable = false)

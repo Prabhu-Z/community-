@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { Trophy, Award, Medal, Crown, Star, Users, Sparkles, Building2, Globe } from 'lucide-react';
+import { Trophy, Award, Medal, Crown, Star, Users, Sparkles, Building2, Globe, Eye } from 'lucide-react';
 
 const FacultyLeaderboardPage = () => {
+  const navigate = useNavigate();
   const [communities, setCommunities] = useState([]);
   const [selectedCommunityId, setSelectedCommunityId] = useState('ALL'); // 'ALL' or communityId
   const [leaderboard, setLeaderboard] = useState([]);
@@ -165,11 +167,20 @@ const FacultyLeaderboardPage = () => {
                   <th className="py-3 px-4 text-right">Points Earned</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/10 text-slate-600">
+              <tbody className="divide-y divide-slate-100 text-slate-600">
                 {leaderboard.map((st) => (
-                  <tr key={st.studentId} className="hover:bg-white/5 transition">
+                  <tr key={st.studentId} className="hover:bg-slate-50 transition">
                     <td className="py-3.5 px-4 font-mono font-bold text-sm text-slate-800">#{st.rank}</td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{st.studentName}</td>
+                    <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
+                      <button
+                        onClick={() => navigate(`/faculty/students/${st.studentId}`)}
+                        className="p-1 rounded-lg hover:bg-purple-100 text-[#7c3aed] transition"
+                        title="View Student Portfolio Dashboard"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      {st.studentName}
+                    </td>
                     <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">{st.studentCode}</td>
                     <td className="py-3.5 px-4">{st.department}</td>
                     <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800 text-sm">

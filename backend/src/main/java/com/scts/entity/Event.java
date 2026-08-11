@@ -23,11 +23,11 @@ public class Event {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "event_type", nullable = false)
     private EventType eventType;
 
-    @Column(name = "event_scope")
-    private String eventScope; // "COMMUNITY_EVENT" (Private to Community) vs "GLOBAL_EVENT" (Open to All Campus Students)
+    @Column(name = "event_scope", nullable = false)
+    private String eventScope; // "COMMUNITY_EVENT" (Private to Members) vs "GLOBAL_EVENT" (Open to All Campus)
 
     @Column(nullable = false)
     private String venue;
@@ -35,14 +35,16 @@ public class Event {
     @Column(name = "event_date", nullable = false)
     private LocalDate eventDate;
 
+    @Column(nullable = false)
     private String time;
 
+    @Column(nullable = false)
     private String duration;
 
-    @Column(name = "registration_deadline")
+    @Column(name = "registration_deadline", nullable = false)
     private LocalDate registrationDeadline;
 
-    @Column(name = "max_participants")
+    @Column(name = "max_participants", nullable = false)
     private Integer maxParticipants;
 
     @Enumerated(EnumType.STRING)
@@ -52,12 +54,15 @@ public class Event {
     @Column(name = "coordinator_name")
     private String coordinatorName;
 
+    @Column(name = "otp_code")
+    private String otpCode;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     public Event() {}
 
-    public Event(Long id, Community community, String title, String description, EventType eventType, String eventScope, String venue, LocalDate eventDate, String time, String duration, LocalDate registrationDeadline, Integer maxParticipants, EventStatus status, String coordinatorName, LocalDateTime createdAt) {
+    public Event(Long id, Community community, String title, String description, EventType eventType, String eventScope, String venue, LocalDate eventDate, String time, String duration, LocalDate registrationDeadline, Integer maxParticipants, EventStatus status, String coordinatorName, String otpCode, LocalDateTime createdAt) {
         this.id = id;
         this.community = community;
         this.title = title;
@@ -72,6 +77,7 @@ public class Event {
         this.maxParticipants = maxParticipants;
         this.status = status;
         this.coordinatorName = coordinatorName;
+        this.otpCode = otpCode;
         this.createdAt = createdAt;
     }
 
@@ -128,6 +134,9 @@ public class Event {
     public String getCoordinatorName() { return coordinatorName; }
     public void setCoordinatorName(String coordinatorName) { this.coordinatorName = coordinatorName; }
 
+    public String getOtpCode() { return otpCode; }
+    public void setOtpCode(String otpCode) { this.otpCode = otpCode; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
@@ -148,6 +157,7 @@ public class Event {
         private Integer maxParticipants;
         private EventStatus status;
         private String coordinatorName;
+        private String otpCode;
         private LocalDateTime createdAt;
 
         public EventBuilder id(Long id) { this.id = id; return this; }
@@ -164,10 +174,11 @@ public class Event {
         public EventBuilder maxParticipants(Integer maxParticipants) { this.maxParticipants = maxParticipants; return this; }
         public EventBuilder status(EventStatus status) { this.status = status; return this; }
         public EventBuilder coordinatorName(String coordinatorName) { this.coordinatorName = coordinatorName; return this; }
+        public EventBuilder otpCode(String otpCode) { this.otpCode = otpCode; return this; }
         public EventBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
 
         public Event build() {
-            return new Event(id, community, title, description, eventType, eventScope, venue, eventDate, time, duration, registrationDeadline, maxParticipants, status, coordinatorName, createdAt);
+            return new Event(id, community, title, description, eventType, eventScope, venue, eventDate, time, duration, registrationDeadline, maxParticipants, status, coordinatorName, otpCode, createdAt);
         }
     }
 }

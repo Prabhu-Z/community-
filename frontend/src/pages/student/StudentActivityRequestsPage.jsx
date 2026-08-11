@@ -8,6 +8,7 @@ import { Plus, Award, CheckCircle2, XCircle, Clock, Link2, FileText, ShieldAlert
 
 const StudentActivityRequestsPage = () => {
   const { user } = useAuth();
+  const [student, setStudent] = useState(null);
   const [requests, setRequests] = useState([]);
   const [userMemberships, setUserMemberships] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,26 +35,24 @@ const StudentActivityRequestsPage = () => {
 
   const fetchData = async () => {
     try {
-      let studentIdParam = user?.studentId || user?.id;
+      // Fetch student's profile first to get the correct student ID
+      const studentRes = await api.get(`/students/user/${user.id}`);
+      const studentData = studentRes.data;
+      setStudent(studentData);
 
-      // 1. Fetch student's submitted requests
-      const reqRes = await api.get(`/activity-requests/student/${studentIdParam}`);
-      setRequests(reqRes.data || []);
+      if (studentData?.id) {
+        // 1. Fetch student's submitted requests
+        const reqRes = await api.get(`/activity-requests/student/${studentData.id}`);
+        setRequests(reqRes.data || []);
 
-      // 2. Fetch student's approved memberships
-      let approvedMems = [];
-      if (user?.studentId) {
-        const memRes = await api.get(`/memberships/student/${user.studentId}`);
-        approvedMems = (memRes.data || []).filter((m) => m.status === 'APPROVED');
-      } else if (user?.id) {
-        const userMemRes = await api.get(`/memberships/user/${user.id}`);
-        approvedMems = (userMemRes.data || []).filter((m) => m.status === 'APPROVED');
-      }
+        // 2. Fetch student's approved memberships
+        const memRes = await api.get(`/memberships/student/${studentData.id}`);
+        const approvedMems = (memRes.data || []).filter((m) => m.status === 'APPROVED');
+        setUserMemberships(approvedMems);
 
-      setUserMemberships(approvedMems);
-
-      if (approvedMems.length > 0) {
-        setFormData((prev) => ({ ...prev, communityId: approvedMems[0].communityId }));
+        if (approvedMems.length > 0) {
+          setFormData((prev) => ({ ...prev, communityId: approvedMems[0].communityId }));
+        }
       }
     } catch (err) {
       console.error('Error fetching activity requests:', err);
@@ -71,10 +70,9 @@ const StudentActivityRequestsPage = () => {
 
     setSubmitting(true);
     try {
-      let studentIdParam = user?.studentId || user?.id;
       const payload = {
         ...formData,
-        studentId: studentIdParam,
+        studentId: student?.id,
         communityId: parseInt(formData.communityId),
         requestedPoints: parseInt(formData.requestedPoints) || 5,
       };

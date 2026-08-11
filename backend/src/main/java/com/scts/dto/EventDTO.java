@@ -23,10 +23,12 @@ public class EventDTO {
     private String coordinatorName;
     private String proposedByName;
     private Boolean isUserRegistered;
+    private String userRegistrationStatus; // "REGISTERED", "NOMINATED" or null
+    private String otpCode;
 
     public EventDTO() {}
 
-    public EventDTO(Long id, Long communityId, String communityName, String title, String description, EventType eventType, String eventScope, String venue, LocalDate eventDate, String time, String duration, LocalDate registrationDeadline, Integer maxParticipants, Long currentRegistrations, EventStatus status, String coordinatorName, String proposedByName, Boolean isUserRegistered) {
+    public EventDTO(Long id, Long communityId, String communityName, String title, String description, EventType eventType, String eventScope, String venue, LocalDate eventDate, String time, String duration, LocalDate registrationDeadline, Integer maxParticipants, Long currentRegistrations, EventStatus status, String coordinatorName, String proposedByName, Boolean isUserRegistered, String userRegistrationStatus, String otpCode) {
         this.id = id;
         this.communityId = communityId;
         this.communityName = communityName;
@@ -45,6 +47,8 @@ public class EventDTO {
         this.coordinatorName = coordinatorName;
         this.proposedByName = proposedByName;
         this.isUserRegistered = isUserRegistered;
+        this.userRegistrationStatus = userRegistrationStatus;
+        this.otpCode = otpCode;
     }
 
     public Long getId() { return id; }
@@ -83,6 +87,10 @@ public class EventDTO {
     public void setProposedByName(String proposedByName) { this.proposedByName = proposedByName; }
     public Boolean getIsUserRegistered() { return isUserRegistered; }
     public void setIsUserRegistered(Boolean isUserRegistered) { this.isUserRegistered = isUserRegistered; }
+    public String getUserRegistrationStatus() { return userRegistrationStatus; }
+    public void setUserRegistrationStatus(String userRegistrationStatus) { this.userRegistrationStatus = userRegistrationStatus; }
+    public String getOtpCode() { return otpCode; }
+    public void setOtpCode(String otpCode) { this.otpCode = otpCode; }
 
     public static EventDTOBuilder builder() { return new EventDTOBuilder(); }
 
@@ -105,6 +113,8 @@ public class EventDTO {
         private String coordinatorName;
         private String proposedByName;
         private Boolean isUserRegistered;
+        private String userRegistrationStatus;
+        private String otpCode;
 
         public EventDTOBuilder id(Long id) { this.id = id; return this; }
         public EventDTOBuilder communityId(Long communityId) { this.communityId = communityId; return this; }
@@ -124,9 +134,11 @@ public class EventDTO {
         public EventDTOBuilder coordinatorName(String coordinatorName) { this.coordinatorName = coordinatorName; return this; }
         public EventDTOBuilder proposedByName(String proposedByName) { this.proposedByName = proposedByName; return this; }
         public EventDTOBuilder isUserRegistered(Boolean isUserRegistered) { this.isUserRegistered = isUserRegistered; return this; }
+        public EventDTOBuilder userRegistrationStatus(String userRegistrationStatus) { this.userRegistrationStatus = userRegistrationStatus; return this; }
+        public EventDTOBuilder otpCode(String otpCode) { this.otpCode = otpCode; return this; }
 
         public EventDTO build() {
-            return new EventDTO(id, communityId, communityName, title, description, eventType, eventScope, venue, eventDate, time, duration, registrationDeadline, maxParticipants, currentRegistrations, status, coordinatorName, proposedByName, isUserRegistered);
+            return new EventDTO(id, communityId, communityName, title, description, eventType, eventScope, venue, eventDate, time, duration, registrationDeadline, maxParticipants, currentRegistrations, status, coordinatorName, proposedByName, isUserRegistered, userRegistrationStatus, otpCode);
         }
     }
 }

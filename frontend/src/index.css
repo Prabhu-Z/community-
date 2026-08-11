@@ -4,20 +4,25 @@
 
 @layer base {
   body {
-    @apply bg-[#eef2f6] text-[#1e293b] font-sans antialiased min-h-screen selection:bg-[#8b5cf6] selection:text-[#ffffff];
-    background-color: #eef2f6 !important;
+    @apply text-[#1e293b] font-sans antialiased min-h-screen selection:bg-[#8b5cf6] selection:text-[#ffffff];
+    background-color: #f8fafc !important;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.03) 0px, transparent 50%),
+      radial-gradient(at 50% 0%, rgba(56, 189, 248, 0.02) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.02) 0px, transparent 50%) !important;
+    background-attachment: fixed !important;
   }
 
   /* Compact Refined Headings */
   h1, h2, h3, h4, h5, h6, .font-serif {
     font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
-    letter-spacing: -0.025em !important;
+    letter-spacing: -0.03em !important;
     font-weight: 800;
   }
 
   p, span, div, button, input, select, textarea {
     font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
   }
 }
 
@@ -28,80 +33,84 @@
   line-height: 1;
 }
 
-/* Clean White Panels & Cards - LMS Periwinkle Aesthetic */
+/* Frosted Premium Panels & Cards - SCTS Aesthetic */
 .glass-panel-apple, .glass-panel {
-  background: #ffffff;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-  color: #1e293b;
-  border-radius: 1.25rem;
-}
-
-/* Interactive White Glass Cards */
-.glass-card-apple, .glass-card {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
   color: #1e293b;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 1.5rem;
+}
+
+/* Interactive Frosted Glass Cards */
+.glass-card-apple, .glass-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  color: #1e293b;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
-  border-radius: 1.25rem;
+  border-radius: 1.5rem;
 }
 
 .glass-card-apple:hover, .glass-card:hover {
-  border-color: #8b5cf6;
+  border-color: rgba(139, 92, 246, 0.4);
   transform: translateY(-4px);
-  box-shadow: 0 14px 30px rgba(139, 92, 246, 0.15);
+  box-shadow: 
+    0 20px 40px -15px rgba(139, 92, 246, 0.12),
+    0 0 0 1px rgba(139, 92, 246, 0.05);
 }
 
 /* Header & Sidebar Glassmorphism */
 .navbar-glass {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(25px) saturate(190%);
-  -webkit-backdrop-filter: blur(25px) saturate(190%);
-  border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
 }
 
 .sidebar-glass {
-  background: #ffffff;
-  border-right: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(226, 232, 240, 0.8);
 }
 
-/* Purple Glow & Action Buttons */
+/* Glow & Action Buttons */
 .gold-glow, .purple-glow {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.35);
-  transition: box-shadow 0.3s ease;
+  box-shadow: 0 0 25px rgba(139, 92, 246, 0.2);
+  transition: all 0.3s ease;
 }
 
 .gold-glow:hover, .purple-glow:hover {
-  box-shadow: 0 0 35px rgba(139, 92, 246, 0.55);
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.4);
 }
 
 .honey-btn, .purple-btn {
   background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
   color: #FFFFFF !important;
-  font-weight: 800;
-  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.35);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-weight: 700;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.25);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
-  border-radius: 0.875rem;
+  border-radius: 1rem;
 }
 
 .honey-btn:hover, .purple-btn:hover {
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.55);
-  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.4);
+  transform: translateY(-2px);
 }
 
 .honey-btn:active, .purple-btn:active {
-  transform: translateY(1px) scale(0.98);
+  transform: translateY(1px);
   box-shadow: 0 2px 10px rgba(124, 58, 237, 0.25);
 }
 
@@ -110,7 +119,8 @@ input, select, textarea {
   background-color: #ffffff !important;
   color: #1e293b !important;
   border: 1px solid #cbd5e1 !important;
-  border-radius: 0.75rem;
+  border-radius: 0.875rem;
+  transition: all 0.2s ease-in-out;
 }
 
 select option, option {
@@ -133,31 +143,101 @@ input::placeholder, textarea::placeholder {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: #8b5cf6 !important;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15) !important;
 }
 
 /* Purple Gradient Text Fills */
 .gold-gradient-text, .purple-gradient-text {
-  background: linear-gradient(135deg, #1e293b 0%, #475569 50%, #7c3aed 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #334155 50%, #7c3aed 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #eef2f6;
+  background: #f1f5f9;
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 4px;
+  border-radius: 8px;
+  border: 2px solid #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8b5cf6;
+  background: #a78bfa;
 }
+
+/* Micro Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Unified Campus Calendar CSS */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background-color: #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.calendar-day {
+  background-color: #ffffff;
+  min-height: 120px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.15s ease-in-out;
+}
+
+.calendar-day:hover {
+  background-color: #f8fafc;
+}
+
+.calendar-day.selected-day {
+  background-color: #f3e8ff;
+}
+
+.day-number.current-day {
+  background-color: #7c3aed;
+  color: #ffffff;
+  border-radius: 9999px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.event-pill {
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #d1fae5;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+

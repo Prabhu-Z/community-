@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
-import { Search, Users, ShieldCheck, Mail, GraduationCap, Calendar, UserMinus, Building2 } from 'lucide-react';
+import { Search, Users, ShieldCheck, Mail, GraduationCap, Calendar, UserMinus, Building2, Eye } from 'lucide-react';
 
 const CoordinatorStudentSearchPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [community, setCommunity] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -187,13 +189,21 @@ const CoordinatorStudentSearchPage = () => {
                   <span className="text-[11px] text-slate-500 font-semibold">{community.name}</span>
                 </div>
 
-                {/* Remove Member Button */}
-                <button
-                  onClick={() => handleRemoveMember(m.id, m.studentName)}
-                  className="w-full py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
-                >
-                  <UserMinus className="w-3.5 h-3.5" /> Remove from Community
-                </button>
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigate(`/faculty/students/${m.studentId || m.id}`)}
+                    className="flex-1 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-[#8b5cf6] text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> View Portfolio
+                  </button>
+                  <button
+                    onClick={() => handleRemoveMember(m.id, m.studentName)}
+                    className="flex-1 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                  >
+                    <UserMinus className="w-3.5 h-3.5" /> Remove
+                  </button>
+                </div>
               </div>
             </div>
           ))}

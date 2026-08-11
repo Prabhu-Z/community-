@@ -36,6 +36,11 @@ public class MembershipController {
         return ResponseEntity.ok(membershipService.getPendingRequests());
     }
 
+    @GetMapping("/admin/pending")
+    public ResponseEntity<List<MembershipDTO>> getAdminPendingRequests() {
+        return ResponseEntity.ok(membershipService.getAdminPendingRequests());
+    }
+
     @GetMapping("/community/{communityId}/pending")
     public ResponseEntity<List<MembershipDTO>> getCommunityPendingRequests(@PathVariable Long communityId) {
         return ResponseEntity.ok(membershipService.getCommunityPendingRequests(communityId));
@@ -72,6 +77,13 @@ public class MembershipController {
     @PutMapping("/{id}/dismiss-leader")
     public ResponseEntity<MembershipDTO> dismissStudentLeader(@PathVariable Long id) {
         return ResponseEntity.ok(membershipService.dismissStudentLeader(id));
+    }
+
+    @PutMapping("/{id}/move")
+    public ResponseEntity<MembershipDTO> moveMembership(
+            @PathVariable Long id,
+            @RequestParam Long targetCommunityId) {
+        return ResponseEntity.ok(membershipService.moveMembership(id, targetCommunityId));
     }
 
     @DeleteMapping("/{id}")

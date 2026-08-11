@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import {
@@ -22,7 +22,8 @@ import {
   GraduationCap,
   Sparkles,
   Trophy,
-  Crown
+  Crown,
+  BookOpen
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -90,11 +91,13 @@ const Sidebar = ({ isOpen, onClose }) => {
     { to: '/student/leaderboard', icon: Trophy, label: 'Community Leaderboard' },
     { to: '/student/communities', icon: Users, label: 'Explore Communities' },
     { to: '/student/events', icon: Calendar, label: 'Events & Registration' },
+    { to: '/student/calendar', icon: Calendar, label: 'Campus Calendar' },
     { to: '/student/attendance', icon: CheckSquare, label: 'My Attendance' },
     { to: '/student/timeline', icon: Clock, label: 'Activity Timeline' },
     { to: '/student/volunteer-hours', icon: CheckCircle2, label: 'Volunteer Hours' },
     { to: '/student/achievements', icon: Award, label: 'Achievements' },
     { to: '/student/certificates', icon: FileCheck, label: 'Certificates' },
+    { to: '/student/resources', icon: BookOpen, label: 'Community Roadmaps' },
     { to: '/student/notifications', icon: Bell, label: 'Notifications' }
   );
 
@@ -114,16 +117,20 @@ const Sidebar = ({ isOpen, onClose }) => {
     { to: '/coordinator/volunteer-hours', icon: CheckCircle2, label: 'Verify Hours' },
     { to: '/coordinator/announcements', icon: Megaphone, label: 'Announcements' },
     { to: '/coordinator/reports', icon: FileText, label: 'Community Reports' },
+    { to: '/faculty/analytics', icon: BarChart3, label: 'Participation Analytics' },
   ];
 
   const facultyLinks = [
     { to: '/faculty/dashboard', icon: LayoutDashboard, label: 'Admin Dashboard' },
+    { to: '/faculty/tasks', icon: CheckSquare, label: 'Task Assignments' },
     { to: '/faculty/leaderboards', icon: Trophy, label: 'Campus Leaderboards' },
     { to: '/faculty/communities', icon: Users, label: 'All 30+ Communities' },
+    {to: '/faculty/membership-requests', icon: Users, label: 'Join Requests'},
     { to: '/faculty/coordinator-search', icon: UserCheck, label: 'Faculty Search' },
     { to: '/faculty/student-search', icon: Search, label: 'Student Search' },
     { to: '/faculty/analytics', icon: BarChart3, label: 'Participation Analytics' },
     { to: '/faculty/reports', icon: FileText, label: 'College Reports' },
+    { to: '/faculty/resources', icon: BookOpen, label: 'Resources & Roadmaps' },
   ];
 
   let links = [];
@@ -195,15 +202,31 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* User Profile Footer */}
         <div className="p-4 border-t border-slate-100">
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3 shadow-sm hover:border-[#8b5cf6]/40 transition">
-            <div className="w-8 h-8 rounded-full bg-[#8b5cf6] flex items-center justify-center text-white font-bold text-xs shadow-md">
-              {user.name ? user.name[0] : 'U'}
+          {role === 'ROLE_STUDENT' ? (
+            <Link
+              to="/student/profile-links"
+              onClick={onClose}
+              className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3 shadow-sm hover:border-[#8b5cf6]/60 cursor-pointer transition block group"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#8b5cf6] group-hover:bg-[#7c3aed] flex items-center justify-center text-white font-bold text-xs shadow-md transition">
+                {user.name ? user.name[0] : 'U'}
+              </div>
+              <div className="overflow-hidden flex-1">
+                <div className="text-xs font-bold text-slate-800 truncate group-hover:text-[#7c3aed] transition">{user.name || 'User'}</div>
+                <div className="text-[10px] text-slate-500 truncate font-mono">{user.email}</div>
+              </div>
+            </Link>
+          ) : (
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3 shadow-sm hover:border-[#8b5cf6]/40 transition">
+              <div className="w-8 h-8 rounded-full bg-[#8b5cf6] flex items-center justify-center text-white font-bold text-xs shadow-md">
+                {user.name ? user.name[0] : 'U'}
+              </div>
+              <div className="overflow-hidden">
+                <div className="text-xs font-bold text-slate-800 truncate">{user.name || 'User'}</div>
+                <div className="text-[10px] text-slate-500 truncate font-mono">{user.email}</div>
+              </div>
             </div>
-            <div className="overflow-hidden">
-              <div className="text-xs font-bold text-slate-800 truncate">{user.name || 'User'}</div>
-              <div className="text-[10px] text-slate-500 truncate font-mono">{user.email}</div>
-            </div>
-          </div>
+          )}
         </div>
       </aside>
     </>

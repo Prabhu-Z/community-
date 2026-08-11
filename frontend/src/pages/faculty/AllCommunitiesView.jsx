@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
@@ -9,6 +9,7 @@ import { Search, Plus, UserCheck, Eye, KeyRound, CheckCircle2, ShieldCheck, Crow
 
 const AllCommunitiesView = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [communities, setCommunities] = useState([]);
   const [staffUsers, setStaffUsers] = useState([]);
   const [allUsersList, setAllUsersList] = useState([]);
@@ -26,8 +27,8 @@ const AllCommunitiesView = () => {
     category: 'TECHNICAL',
     description: '',
     maxSize: 100,
-    facultyCoordinator: 'Dr. Admin Lead',
-    studentCoordinator: 'Student Lead',
+    facultyCoordinator: '',
+    studentCoordinator: '',
     status: 'ACTIVE',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +66,7 @@ const AllCommunitiesView = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [location.pathname]);
 
   const fetchData = async () => {
     try {
@@ -124,8 +125,8 @@ const AllCommunitiesView = () => {
         category: 'TECHNICAL',
         description: '',
         maxSize: 100,
-        facultyCoordinator: 'Dr. Admin Lead',
-        studentCoordinator: 'Student Lead',
+        facultyCoordinator: '',
+        studentCoordinator: '',
         status: 'ACTIVE',
       });
       fetchData();
@@ -282,6 +283,16 @@ const AllCommunitiesView = () => {
     }
   };
 
+  const handleDeleteCommunity = async (communityId) => {
+    try {
+      await api.delete(`/communities/${communityId}`);
+      setDetailModal(false);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete community.');
+    }
+  };
+
   if (loading) return <LoadingSpinner label="Loading all college communities..." />;
 
   const filtered = communities.filter(
@@ -397,9 +408,6 @@ const AllCommunitiesView = () => {
                   <strong className="text-slate-800">Admin Lead:</strong> {c.facultyCoordinator || 'Unassigned'}
                 </div>
                 <div>
-                  <strong className="text-slate-800">Student Lead:</strong> {c.studentCoordinator || 'Unassigned'}
-                </div>
-                <div>
                   <strong className="text-slate-800">Members / Capacity:</strong>{' '}
                   <span className={`font-bold font-mono ${
                     (c.memberCount || 0) >= (c.maxSize || 100) ? 'text-rose-600' : 'text-[#7c3aed]'
@@ -433,6 +441,7 @@ const AllCommunitiesView = () => {
         community={activeCommunity}
         onOpenAssignModal={(comm) => handleOpenAssignModal({ stopPropagation: () => {} }, comm)}
         onOpenImportModal={(comm) => handleOpenImportModal({ stopPropagation: () => {} }, comm)}
+        onDeleteCommunity={handleDeleteCommunity}
       />
 
       {/* Modal: Grant Coordinator Access By Email */}

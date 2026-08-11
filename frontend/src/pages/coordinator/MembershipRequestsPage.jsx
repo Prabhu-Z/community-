@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
-import { Check, X, ShieldCheck, UserCheck, Calendar, Sparkles, Building2 } from 'lucide-react';
+import { Check, X, ShieldCheck, UserCheck, Calendar, Sparkles, Building2, Eye } from 'lucide-react';
 
 const MembershipRequestsPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [community, setCommunity] = useState(null);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ const MembershipRequestsPage = () => {
           </p>
         </div>
 
-        <div className="px-4 py-2 rounded-2xl bg-[#8b5cf6] text-white/10 border border-[#8b5cf6]/30 text-[#7c3aed] text-xs font-mono font-bold flex items-center gap-2">
+        <div className="px-4 py-2 rounded-2xl bg-[#8b5cf6] text-white border border-[#8b5cf6]/30 text-xs font-mono font-bold flex items-center gap-2">
           <UserCheck className="w-4 h-4" /> {requests.length} Pending Review
         </div>
       </div>
@@ -107,7 +109,7 @@ const MembershipRequestsPage = () => {
         <div className="overflow-x-auto rounded-2xl border border-slate-200">
           <table className="w-full text-left text-xs text-slate-800">
             {/* Header: Pure Black / Obsidian with Celestial Gold stroke and text */}
-            <thead className="bg-[#121216] text-[#7c3aed] font-bold uppercase tracking-wider border-b border-[#8b5cf6]/20">
+            <thead className="bg-slate-50 text-[#7c3aed] font-bold uppercase tracking-wider border-b border-slate-200">
               <tr>
                 <th className="p-4 font-extrabold">Student Name</th>
                 <th className="p-4 font-extrabold">Register Code</th>
@@ -139,6 +141,13 @@ const MembershipRequestsPage = () => {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => navigate(`/faculty/students/${r.studentId || r.id}`)}
+                          className="p-2 rounded-xl bg-purple-500/20 text-[#7c3aed] hover:bg-[#7c3aed] hover:text-white border border-purple-500/40 font-extrabold flex items-center justify-center transition active:scale-95 shadow-md"
+                          title="View Student Extracurricular Portfolio Dashboard"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => handleApprove(r.id)}
                           className="px-3.5 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-[#3C2F00] border border-emerald-500/40 font-extrabold flex items-center gap-1.5 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md"

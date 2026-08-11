@@ -6,7 +6,8 @@ import Timeline from '../../components/common/Timeline';
 import Badge from '../../components/common/Badge';
 import PrintReportModal from '../../components/reports/PrintReportModal';
 import StudentHeatStreak from '../../components/common/StudentHeatStreak';
-import { User, Mail, Phone, BookOpen, Award, CheckCircle2, FileCheck, Printer, CheckSquare, Sparkles } from 'lucide-react';
+
+import { User, Mail, Phone, BookOpen, Award, CheckCircle2, FileCheck, Printer, CheckSquare, Sparkles, Github, Linkedin, Globe, Link2 } from 'lucide-react';
 
 const StudentProfilePage = () => {
   const { user } = useAuth();
@@ -35,13 +36,19 @@ const StudentProfilePage = () => {
         const studentIdParam = s?.id || user?.studentId || user?.id;
 
         if (studentIdParam) {
-          const [commRes, actRes, achRes, certRes, taskRes] = await Promise.all([
+          const [commRes, actRes, achRes, certRes, taskRes, lbRes] = await Promise.all([
             api.get(`/students/${studentIdParam}/communities`).catch(() => ({ data: [] })),
             api.get(`/students/${studentIdParam}/activities`).catch(() => ({ data: [] })),
             api.get(`/students/${studentIdParam}/achievements`).catch(() => ({ data: [] })),
             api.get(`/students/${studentIdParam}/certificates`).catch(() => ({ data: [] })),
             api.get(`/tasks/student/${studentIdParam}`).catch(() => ({ data: [] })),
+            api.get('/leaderboard/all').catch(() => ({ data: [] })),
           ]);
+
+          const myLbEntry = (lbRes.data || []).find(e => e.studentId === studentIdParam);
+          if (s) {
+            s.points = myLbEntry ? myLbEntry.points : (s.points || 0);
+          }
 
           setCommunities(commRes.data || []);
           setActivities(actRes.data || []);
@@ -88,6 +95,17 @@ const StudentProfilePage = () => {
     totalCertificates: 0,
   };
 
+  let parsedCustomLinks = [];
+  if (activeStudent.customLinks) {
+    try {
+      parsedCustomLinks = JSON.parse(activeStudent.customLinks);
+    } catch (e) {
+      console.error('Error parsing custom links:', e);
+    }
+  }
+
+  const hasLinks = activeStudent.github || activeStudent.linkedin || activeStudent.leetcode || activeStudent.hackerrank || activeStudent.codechef || (parsedCustomLinks && parsedCustomLinks.length > 0);
+
   return (
     <div className="space-y-8 p-2 lg:p-4">
       {/* Portfolio Header Card */}
@@ -103,6 +121,73 @@ const StudentProfilePage = () => {
               <span className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5 text-[#8b5cf6]" /> {activeStudent.department}</span>
               <span>• {activeStudent.degree} (Year {activeStudent.year}, Sem {activeStudent.semester})</span>
             </div>
+
+            {/* Social/Coding Profile Links */}
+            {hasLinks && (
+              <div className="flex items-center gap-3 mt-3 flex-wrap">
+                {activeStudent.github && (
+                  <a
+                    href={activeStudent.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 text-[11px] font-bold transition shadow-sm"
+                  >
+                    <Github className="w-3.5 h-3.5 text-black" /> GitHub
+                  </a>
+                )}
+                {activeStudent.linkedin && (
+                  <a
+                    href={activeStudent.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 text-[11px] font-bold transition shadow-sm"
+                  >
+                    <Linkedin className="w-3.5 h-3.5 text-blue-600" /> LinkedIn
+                  </a>
+                )}
+                {activeStudent.leetcode && (
+                  <a
+                    href={activeStudent.leetcode}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 text-[11px] font-bold transition shadow-sm"
+                  >
+                    <Globe className="w-3.5 h-3.5 text-amber-500" /> LeetCode
+                  </a>
+                )}
+                {activeStudent.hackerrank && (
+                  <a
+                    href={activeStudent.hackerrank}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 text-[11px] font-bold transition shadow-sm"
+                  >
+                    <Link2 className="w-3.5 h-3.5 text-emerald-600" /> HackerRank
+                  </a>
+                )}
+                {activeStudent.codechef && (
+                  <a
+                    href={activeStudent.codechef}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 text-[11px] font-bold transition shadow-sm"
+                  >
+                    <Link2 className="w-3.5 h-3.5 text-orange-600" /> CodeChef
+                  </a>
+                )}
+                {Array.isArray(parsedCustomLinks) && parsedCustomLinks.map((lnk, idx) => (
+                  <a
+                    key={idx}
+                    href={lnk.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-[#7c3aed] border border-[#7c3aed]/25 text-[11px] font-bold transition shadow-sm"
+                  >
+                    <Link2 className="w-3.5 h-3.5 text-[#7c3aed]" /> {lnk.name}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -112,6 +197,39 @@ const StudentProfilePage = () => {
         >
           <Printer className="w-4 h-4" /> Download Official Portfolio PDF
         </button>
+      </div>
+
+      {/* Gamification & Community Leaderboard Points Dashboard */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Activity Points</span>
+            <div className="text-3xl font-extrabold text-slate-900 mt-1 font-mono">0</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xl shrink-0">
+            🏃‍♂️
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Reward Points</span>
+            <div className="text-3xl font-extrabold text-slate-900 mt-1 font-mono">0</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-xl shrink-0">
+            🎁
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-tr from-[#7c3aed] to-[#8b5cf6] p-6 rounded-3xl border border-[#7c3aed]/30 shadow-lg shadow-purple-500/10 flex items-center justify-between gap-4 text-white">
+          <div>
+            <span className="text-[10px] font-bold text-purple-200 uppercase tracking-widest font-mono">Community Points (Leaderboard)</span>
+            <div className="text-3xl font-extrabold mt-1 font-mono">{activeStudent.points || 0}</div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-white/20 border border-white/10 flex items-center justify-center text-xl shrink-0">
+            👑
+          </div>
+        </div>
       </div>
 
       {/* LEETCODE-STYLE HEATSTREAK MATRIX COMPONENT */}

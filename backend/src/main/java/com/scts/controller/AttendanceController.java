@@ -37,4 +37,12 @@ public class AttendanceController {
             @RequestParam String status) {
         return ResponseEntity.ok(attendanceService.recordAttendance(eventId, studentId, status));
     }
+
+    @PostMapping("/check-in")
+    public ResponseEntity<AttendanceDTO> checkInStudent(
+            @RequestParam Long eventId,
+            @RequestParam Long studentId,
+            @RequestParam String otp) {
+        return ResponseEntity.ok(attendanceService.checkInStudent(eventId, studentId, otp));
+    }
 }

@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
+import GroupChat from '../../components/common/GroupChat';
 import { Users, Crown, GraduationCap, Calendar, CheckCircle2, UserPlus, LogOut, Info, ShieldCheck, Sparkles, ChevronRight, Building2 } from 'lucide-react';
 
 const GroupOpeningsPage = () => {
@@ -14,6 +15,7 @@ const GroupOpeningsPage = () => {
   const [selectedCommunityId, setSelectedCommunityId] = useState('');
   const [groups, setGroups] = useState([]);
   const [myJoinedGroup, setMyJoinedGroup] = useState(null);
+  const [myPendingGroup, setMyPendingGroup] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Inspector Modal State
@@ -46,16 +48,11 @@ const GroupOpeningsPage = () => {
           return;
         }
 
-        let targetCommId = activeMems[0].communityId.toString();
-        setSelectedCommunityId(targetCommId);
-
-        // Fetch student's joined group (if any)
-        const myJoinedRes = await api.get(`/community-groups/student/${studentData.id}`);
-        const joinedList = myJoinedRes.data || [];
-        if (joinedList.length > 0) {
-          setMyJoinedGroup(joinedList[0]);
-        } else {
-          setMyJoinedGroup(null);
+        let targetCommId = selectedCommunityId;
+        const exists = activeMems.some(m => m.communityId.toString() === targetCommId);
+        if (!targetCommId || !exists) {
+          targetCommId = activeMems[0].communityId.toString();
+          setSelectedCommunityId(targetCommId);
         }
 
         // Fetch groups strictly for student's joined community
@@ -73,14 +70,18 @@ const GroupOpeningsPage = () => {
       const res = await api.get(`/community-groups/community/${commId}/approved`);
       setGroups(res.data || []);
 
-      // Check if student joined any group in this community
-      if (studentId) {
-        const myJoined = (res.data || []).find(g =>
-          g.members && g.members.some(m => m.studentId === studentId)
+      if (studentId && res.data) {
+        const myJoined = res.data.find(g =>
+          g.members && g.members.some(m => m.studentId === studentId && m.role !== 'PENDING')
         );
-        if (myJoined) {
-          setMyJoinedGroup(myJoined);
-        }
+        const myPending = res.data.find(g =>
+          g.members && g.members.some(m => m.studentId === studentId && m.role === 'PENDING')
+        );
+        setMyJoinedGroup(myJoined || null);
+        setMyPendingGroup(myPending || null);
+      } else {
+        setMyJoinedGroup(null);
+        setMyPendingGroup(null);
       }
     } catch (err) {
       console.error('Error fetching groups for community:', err);
@@ -99,8 +100,8 @@ const GroupOpeningsPage = () => {
     setSubmitting(true);
     try {
       const res = await api.post(`/community-groups/${groupObj.id}/join?studentId=${student.id}`);
-      alert(`🎉 Congratulations! You have successfully joined "${groupObj.groupName}"!`);
-      setMyJoinedGroup(res.data);
+      alert(`🎉 Join request for "${groupObj.groupName}" has been submitted to the Student Leader for approval!`);
+      setMyPendingGroup(res.data);
       setInspectModal(false);
       fetchData();
     } catch (err) {
@@ -217,13 +218,21 @@ const GroupOpeningsPage = () => {
               >
                 <Info className="w-4 h-4 text-[#8b5cf6]" /> View Full Roster Modal
               </button>
-              <button
-                onClick={() => handleLeaveGroup(myJoinedGroup)}
-                disabled={submitting}
-                className="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50"
-              >
-                <LogOut className="w-3.5 h-3.5" /> Leave Group
-              </button>
+              {myJoinedGroup.leaderStudentId === student?.id ? (
+                <span
+                  className="px-4 py-2.5 rounded-xl bg-purple-100/50 text-[#7c3aed] border border-purple-200 text-xs font-extrabold flex items-center gap-1.5 cursor-help"
+                  title="Student Leaders cannot leave the groups they lead. Only Faculty Coordinators can manage or disband leader groups."
+                >
+                  👑 Team Leader
+                </span>
+              ) : (
+                <span
+                  className="px-4 py-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 cursor-help"
+                  title="Students are not permitted to leave groups. Please request removal from your Faculty Coordinator."
+                >
+                  ✓ Joined Member
+                </span>
+              )}
             </div>
           </div>
 
@@ -235,11 +244,15 @@ const GroupOpeningsPage = () => {
                 <Crown className="w-4 h-4 text-[#8b5cf6]" /> Team Leader Profile
               </div>
               <div className="space-y-1">
-                <div className="font-extrabold text-slate-900 text-lg">{myJoinedGroup.leaderStudentName}</div>
-                <div className="text-xs font-mono text-[#7c3aed] font-bold">Reg #{myJoinedGroup.leaderStudentCode}</div>
-                <div className="text-xs text-slate-600 flex items-center gap-1.5 pt-1 font-medium">
-                  <GraduationCap className="w-3.5 h-3.5 text-[#8b5cf6]" /> {myJoinedGroup.leaderDepartment}
-                </div>
+                <div className="font-extrabold text-slate-900 text-lg">{myJoinedGroup.leaderStudentName || 'No Leader (Vacant)'}</div>
+                {myJoinedGroup.leaderStudentCode && (
+                  <div className="text-xs font-mono text-[#7c3aed] font-bold">Reg #{myJoinedGroup.leaderStudentCode}</div>
+                )}
+                {myJoinedGroup.leaderDepartment && (
+                  <div className="text-xs text-slate-600 flex items-center gap-1.5 pt-1 font-medium">
+                    <GraduationCap className="w-3.5 h-3.5 text-[#8b5cf6]" /> {myJoinedGroup.leaderDepartment}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -285,6 +298,15 @@ const GroupOpeningsPage = () => {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Team Chat Collaboration Box for Members */}
+          <div className="pt-6 border-t border-slate-100">
+            <GroupChat
+              groupId={myJoinedGroup.id}
+              senderName={student?.name || user?.name || 'Member'}
+              senderRole="MEMBER"
+            />
           </div>
         </div>
       )}
@@ -340,11 +362,11 @@ const GroupOpeningsPage = () => {
                       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
                         <div>
                           <div className="text-[10px] font-mono text-slate-500 uppercase font-semibold">Team Leader</div>
-                          <div className="font-extrabold text-slate-800 flex items-center gap-1">
-                            <Crown className="w-3.5 h-3.5 text-[#8b5cf6]" /> {g.leaderStudentName}
+                          <div className="font-extrabold text-slate-850 flex items-center gap-1">
+                            <Crown className="w-3.5 h-3.5 text-[#8b5cf6]" /> {g.leaderStudentName || 'No Leader (Vacant)'}
                           </div>
                         </div>
-                        <span className="text-[10px] font-mono text-[#7c3aed] font-bold">{g.leaderDepartment}</span>
+                        <span className="text-[10px] font-mono text-[#7c3aed] font-bold">{g.leaderDepartment || 'N/A'}</span>
                       </div>
 
                       {/* Capacity Gauge Progress Bar */}
@@ -370,13 +392,11 @@ const GroupOpeningsPage = () => {
                     <div className="pt-3 border-t border-slate-100">
                       {isMemberOfGroup ? (
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleLeaveGroup(g);
-                          }}
-                          className="w-full py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                          disabled
+                          className="w-full py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold cursor-help flex items-center justify-center gap-1.5"
+                          title="Students are not permitted to leave groups. Please request removal from your Faculty Coordinator."
                         >
-                          <LogOut className="w-3.5 h-3.5" /> Joined • Leave Group
+                          ✓ Joined Team Member
                         </button>
                       ) : isFull ? (
                         <button
@@ -438,54 +458,62 @@ const GroupOpeningsPage = () => {
               <div className="text-[10px] font-mono text-[#7c3aed] uppercase font-bold flex items-center gap-1">
                 <Crown className="w-3.5 h-3.5 text-[#8b5cf6]" /> Team Leader
               </div>
-              <div className="text-sm font-bold text-slate-900">{selectedGroup.leaderStudentName}</div>
-              <div className="text-xs font-mono text-slate-600">
-                Student Reg #{selectedGroup.leaderStudentCode} • Dept: {selectedGroup.leaderDepartment}
-              </div>
+              <div className="text-sm font-bold text-slate-900">{selectedGroup.leaderStudentName || 'No Leader (Vacant)'}</div>
+              {selectedGroup.leaderStudentName && (
+                <div className="text-xs font-mono text-slate-600">
+                  Student Reg #{selectedGroup.leaderStudentCode} • Dept: {selectedGroup.leaderDepartment}
+                </div>
+              )}
             </div>
 
             {/* Members Roster List */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between font-bold text-slate-900 text-sm border-b border-slate-100 pb-2">
-                <span>Joined Team Members ({selectedGroup.members?.length || 0} / {selectedGroup.maxTeamSize})</span>
-                <span className="text-xs font-mono text-[#7c3aed] font-bold">
-                  {selectedGroup.maxTeamSize - (selectedGroup.members?.length || 0)} Open Slots
-                </span>
-              </div>
+            {(() => {
+              const allMembers = selectedGroup.members || [];
+              const approvedMembers = allMembers.filter(m => m.role !== 'PENDING');
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between font-bold text-slate-900 text-sm border-b border-slate-100 pb-2">
+                    <span>Joined Team Members ({approvedMembers.length} / {selectedGroup.maxTeamSize})</span>
+                    <span className="text-xs font-mono text-[#7c3aed] font-bold">
+                      {selectedGroup.maxTeamSize - approvedMembers.length} Open Slots
+                    </span>
+                  </div>
 
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {selectedGroup.members && selectedGroup.members.length > 0 ? (
-                  selectedGroup.members.map((m) => {
-                    const isLeader = m.role === 'LEADER' || m.studentId === selectedGroup.leaderStudentId;
-                    return (
-                      <div
-                        key={m.id}
-                        className={`p-3 rounded-xl border flex items-center justify-between ${
-                          isLeader ? 'bg-purple-100/70 border-purple-200 text-purple-950 font-bold' : 'bg-slate-50 border-slate-200 text-slate-700'
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center gap-1 text-xs">
-                            {isLeader && <Crown className="w-3.5 h-3.5 text-[#7c3aed]" />}
-                            <span className="font-bold">{m.studentName}</span>
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {approvedMembers.length > 0 ? (
+                      approvedMembers.map((m) => {
+                        const isLeader = m.role === 'LEADER' || m.studentId === selectedGroup.leaderStudentId;
+                        return (
+                          <div
+                            key={m.id}
+                            className={`p-3 rounded-xl border flex items-center justify-between ${
+                              isLeader ? 'bg-purple-100/70 border-purple-200 text-purple-950 font-bold' : 'bg-slate-50 border-slate-200 text-slate-700'
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-center gap-1 text-xs">
+                                {isLeader && <Crown className="w-3.5 h-3.5 text-[#7c3aed]" />}
+                                <span className="font-bold">{m.studentName}</span>
+                              </div>
+                              <div className="text-[10px] font-mono text-slate-500">
+                                Reg #{m.studentCode} • Dept: {m.department}
+                              </div>
+                            </div>
+                            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                              isLeader ? 'bg-[#8b5cf6] text-white' : 'bg-slate-200 text-slate-700'
+                            }`}>
+                              {isLeader ? 'LEADER' : 'MEMBER'}
+                            </span>
                           </div>
-                          <div className="text-[10px] font-mono text-slate-500">
-                            Reg #{m.studentCode} • Dept: {m.department}
-                          </div>
-                        </div>
-                        <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                          isLeader ? 'bg-[#8b5cf6] text-white' : 'bg-slate-200 text-slate-700'
-                        }`}>
-                          {isLeader ? 'LEADER' : 'MEMBER'}
-                        </span>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-4 text-slate-500">No members in team yet.</div>
-                )}
-              </div>
-            </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-4 text-slate-500">No members in team yet.</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Modal Actions */}
             <div className="pt-3 border-t border-slate-100 flex justify-end gap-3">
@@ -498,13 +526,40 @@ const GroupOpeningsPage = () => {
               </button>
 
               {myJoinedGroup?.id === selectedGroup.id ? (
+                selectedGroup.leaderStudentId === student?.id ? (
+                  <span
+                    className="px-4 py-2.5 rounded-xl bg-purple-100/50 text-[#7c3aed] border border-purple-200 text-xs font-extrabold flex items-center gap-1.5 cursor-help"
+                    title="Student Leaders cannot leave the groups they lead. Only Faculty Coordinators can manage or disband leader groups."
+                  >
+                    👑 Team Leader
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleLeaveGroup(selectedGroup)}
+                    disabled={submitting}
+                    className="px-5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold flex items-center gap-1.5"
+                  >
+                    <LogOut className="w-3.5 h-3.5" /> Leave Group
+                  </button>
+                )
+              ) : myPendingGroup?.id === selectedGroup.id ? (
                 <button
                   type="button"
                   onClick={() => handleLeaveGroup(selectedGroup)}
                   disabled={submitting}
-                  className="px-5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-bold flex items-center gap-1.5 animate-pulse"
+                  title="Click to cancel your pending join request"
                 >
-                  <LogOut className="w-3.5 h-3.5" /> Leave Group
+                  ⏳ Cancel Request
+                </button>
+              ) : myJoinedGroup || myPendingGroup ? (
+                <button
+                  disabled
+                  className="px-5 py-2 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 font-bold cursor-not-allowed text-xs"
+                  title="You can only belong to or request to join one group at a time."
+                >
+                  Group Limit Reached
                 </button>
               ) : selectedGroup.currentMemberCount >= selectedGroup.maxTeamSize ? (
                 <button
@@ -520,7 +575,7 @@ const GroupOpeningsPage = () => {
                   disabled={submitting}
                   className="px-5 py-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition"
                 >
-                  <UserPlus className="w-3.5 h-3.5 text-slate-900" /> Join This Group
+                  <UserPlus className="w-3.5 h-3.5 text-slate-900" /> Request to Join
                 </button>
               )}
             </div>

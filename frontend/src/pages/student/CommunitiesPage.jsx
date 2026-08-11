@@ -161,9 +161,6 @@ const CommunitiesPage = () => {
                   <div>
                     <strong>Faculty Coordinator:</strong> {c.facultyCoordinator || 'Unassigned'}
                   </div>
-                  <div>
-                    <strong>Faculty Head:</strong> {c.studentCoordinator || 'Unassigned'}
-                  </div>
                 </div>
               </div>
 

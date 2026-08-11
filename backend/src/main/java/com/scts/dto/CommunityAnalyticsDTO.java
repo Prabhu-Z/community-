@@ -21,10 +21,12 @@ public class CommunityAnalyticsDTO {
     private List<Map<String, Object>> taskStatusChartData;
     private List<Map<String, Object>> participationRateChartData;
     private List<Map<String, Object>> taskTypeChartData;
+    private List<Map<String, Object>> eventAttendanceChartData;
+    private List<Map<String, Object>> departmentPointsChartData;
 
     public CommunityAnalyticsDTO() {}
 
-    public CommunityAnalyticsDTO(Long communityId, String communityName, String category, String studentCoordinator, String facultyCoordinator, long totalMembers, long totalEvents, long totalEventRegistrations, long totalTasksAssigned, long totalSubmissions, long verifiedSubmissions, long pendingSubmissions, long rejectedSubmissions, double participationPercentage, List<Map<String, Object>> taskStatusChartData, List<Map<String, Object>> participationRateChartData, List<Map<String, Object>> taskTypeChartData) {
+    public CommunityAnalyticsDTO(Long communityId, String communityName, String category, String studentCoordinator, String facultyCoordinator, long totalMembers, long totalEvents, long totalEventRegistrations, long totalTasksAssigned, long totalSubmissions, long verifiedSubmissions, long pendingSubmissions, long rejectedSubmissions, double participationPercentage, List<Map<String, Object>> taskStatusChartData, List<Map<String, Object>> participationRateChartData, List<Map<String, Object>> taskTypeChartData, List<Map<String, Object>> eventAttendanceChartData, List<Map<String, Object>> departmentPointsChartData) {
         this.communityId = communityId;
         this.communityName = communityName;
         this.category = category;
@@ -42,6 +44,8 @@ public class CommunityAnalyticsDTO {
         this.taskStatusChartData = taskStatusChartData;
         this.participationRateChartData = participationRateChartData;
         this.taskTypeChartData = taskTypeChartData;
+        this.eventAttendanceChartData = eventAttendanceChartData;
+        this.departmentPointsChartData = departmentPointsChartData;
     }
 
     public Long getCommunityId() { return communityId; }
@@ -95,6 +99,12 @@ public class CommunityAnalyticsDTO {
     public List<Map<String, Object>> getTaskTypeChartData() { return taskTypeChartData; }
     public void setTaskTypeChartData(List<Map<String, Object>> taskTypeChartData) { this.taskTypeChartData = taskTypeChartData; }
 
+    public List<Map<String, Object>> getEventAttendanceChartData() { return eventAttendanceChartData; }
+    public void setEventAttendanceChartData(List<Map<String, Object>> eventAttendanceChartData) { this.eventAttendanceChartData = eventAttendanceChartData; }
+
+    public List<Map<String, Object>> getDepartmentPointsChartData() { return departmentPointsChartData; }
+    public void setDepartmentPointsChartData(List<Map<String, Object>> departmentPointsChartData) { this.departmentPointsChartData = departmentPointsChartData; }
+
     public static CommunityAnalyticsDTOBuilder builder() { return new CommunityAnalyticsDTOBuilder(); }
 
     public static class CommunityAnalyticsDTOBuilder {
@@ -115,6 +125,8 @@ public class CommunityAnalyticsDTO {
         private List<Map<String, Object>> taskStatusChartData;
         private List<Map<String, Object>> participationRateChartData;
         private List<Map<String, Object>> taskTypeChartData;
+        private List<Map<String, Object>> eventAttendanceChartData;
+        private List<Map<String, Object>> departmentPointsChartData;
 
         public CommunityAnalyticsDTOBuilder communityId(Long communityId) { this.communityId = communityId; return this; }
         public CommunityAnalyticsDTOBuilder communityName(String communityName) { this.communityName = communityName; return this; }
@@ -133,9 +145,11 @@ public class CommunityAnalyticsDTO {
         public CommunityAnalyticsDTOBuilder taskStatusChartData(List<Map<String, Object>> taskStatusChartData) { this.taskStatusChartData = taskStatusChartData; return this; }
         public CommunityAnalyticsDTOBuilder participationRateChartData(List<Map<String, Object>> participationRateChartData) { this.participationRateChartData = participationRateChartData; return this; }
         public CommunityAnalyticsDTOBuilder taskTypeChartData(List<Map<String, Object>> taskTypeChartData) { this.taskTypeChartData = taskTypeChartData; return this; }
+        public CommunityAnalyticsDTOBuilder eventAttendanceChartData(List<Map<String, Object>> eventAttendanceChartData) { this.eventAttendanceChartData = eventAttendanceChartData; return this; }
+        public CommunityAnalyticsDTOBuilder departmentPointsChartData(List<Map<String, Object>> departmentPointsChartData) { this.departmentPointsChartData = departmentPointsChartData; return this; }
 
         public CommunityAnalyticsDTO build() {
-            return new CommunityAnalyticsDTO(communityId, communityName, category, studentCoordinator, facultyCoordinator, totalMembers, totalEvents, totalEventRegistrations, totalTasksAssigned, totalSubmissions, verifiedSubmissions, pendingSubmissions, rejectedSubmissions, participationPercentage, taskStatusChartData, participationRateChartData, taskTypeChartData);
+            return new CommunityAnalyticsDTO(communityId, communityName, category, studentCoordinator, facultyCoordinator, totalMembers, totalEvents, totalEventRegistrations, totalTasksAssigned, totalSubmissions, verifiedSubmissions, pendingSubmissions, rejectedSubmissions, participationPercentage, taskStatusChartData, participationRateChartData, taskTypeChartData, eventAttendanceChartData, departmentPointsChartData);
         }
     }
 }

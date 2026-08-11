@@ -27,6 +27,15 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "faculty_reg_number")
+    private String facultyRegNumber;
+
+    @Column
+    private String name;
+
+    @Column
+    private String department;
+
     public User() {}
 
     public User(Long id, String email, String password, Role role, String status, LocalDateTime createdAt) {
@@ -36,6 +45,18 @@ public class User {
         this.role = role;
         this.status = status;
         this.createdAt = createdAt;
+    }
+
+    public User(Long id, String email, String password, Role role, String status, LocalDateTime createdAt, String facultyRegNumber, String name, String department) {
+        this.id = id;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.facultyRegNumber = facultyRegNumber;
+        this.name = name;
+        this.department = department;
     }
 
     @PrePersist
@@ -59,6 +80,13 @@ public class User {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
+    public String getFacultyRegNumber() { return facultyRegNumber; }
+    public void setFacultyRegNumber(String facultyRegNumber) { this.facultyRegNumber = facultyRegNumber; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+
     public static UserBuilder builder() { return new UserBuilder(); }
 
     public static class UserBuilder {
@@ -68,6 +96,9 @@ public class User {
         private Role role;
         private String status;
         private LocalDateTime createdAt;
+        private String facultyRegNumber;
+        private String name;
+        private String department;
 
         public UserBuilder id(Long id) { this.id = id; return this; }
         public UserBuilder email(String email) { this.email = email; return this; }
@@ -75,9 +106,12 @@ public class User {
         public UserBuilder role(Role role) { this.role = role; return this; }
         public UserBuilder status(String status) { this.status = status; return this; }
         public UserBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
+        public UserBuilder facultyRegNumber(String facultyRegNumber) { this.facultyRegNumber = facultyRegNumber; return this; }
+        public UserBuilder name(String name) { this.name = name; return this; }
+        public UserBuilder department(String department) { this.department = department; return this; }
 
         public User build() {
-            return new User(id, email, password, role, status, createdAt);
+            return new User(id, email, password, role, status, createdAt, facultyRegNumber, name, department);
         }
     }
 }

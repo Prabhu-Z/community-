@@ -5,8 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
-import StudentHeatStreak from '../../components/common/StudentHeatStreak';
-import { CheckSquare, Link2, Upload, FileText, CheckCircle2, Clock, XCircle, ExternalLink, Users, Sparkles, Calendar, AlertCircle } from 'lucide-react';
+
+import { CheckSquare, Link2, Upload, FileText, CheckCircle2, Clock, XCircle, ExternalLink, Users, Sparkles, Calendar, AlertCircle, Lock } from 'lucide-react';
 
 const StudentTasksPage = () => {
   const { user } = useAuth();
@@ -16,7 +16,42 @@ const StudentTasksPage = () => {
 
   // Category & Status Filter States
   const [taskTypeFilter, setTaskTypeFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ACTIVE');
+
+  const isDeadlineExpired = (deadlineStr) => {
+    if (!deadlineStr) return false;
+    try {
+      const clean = deadlineStr.replace('T', ' ').trim();
+      if (clean.length >= 16) {
+        const parts = clean.substring(0, 16).split(' ');
+        const dateParts = parts[0].split('-');
+        const timeParts = parts[1].split(':');
+        const deadlineDate = new Date(
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2]),
+          parseInt(timeParts[0]),
+          parseInt(timeParts[1])
+        );
+        return new Date() > deadlineDate;
+      }
+      if (clean.length >= 10) {
+        const dateParts = clean.substring(0, 10).split('-');
+        const deadlineDate = new Date(
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2]),
+          23,
+          59,
+          59
+        );
+        return new Date() > deadlineDate;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return false;
+  };
 
   // Submission Modal State
   const [submitModal, setSubmitModal] = useState(false);
@@ -123,7 +158,11 @@ const StudentTasksPage = () => {
   if (loading) return <LoadingSpinner label="Loading assigned tasks and deliverables..." />;
 
   const filteredTasks = tasks.filter((t) => {
-    if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
+    if (statusFilter === 'ACTIVE') {
+      if (t.status !== 'PENDING') return false;
+    } else if (statusFilter === 'PAST_SUBMITTED') {
+      if (t.status === 'PENDING') return false;
+    }
 
     if (taskTypeFilter === 'COMMUNITY_TASK') {
       return t.taskType === 'COMMUNITY_TASK' || t.assignedByFacultyName != null;
@@ -186,26 +225,32 @@ const StudentTasksPage = () => {
         </div>
       </div>
 
-      {/* LEETCODE-STYLE HEATSTREAK MATRIX COMPONENT */}
-      <StudentHeatStreak studentId={user?.id} tasks={tasks} />
+
 
       {/* Status Filter Sub-Bar */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-4">
         <div className="flex items-center gap-2 overflow-x-auto">
           <span className="text-xs text-slate-600/60 font-semibold mr-1">Filter Status:</span>
-          {['ALL', 'PENDING', 'SUBMITTED', 'VERIFIED', 'REJECTED'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setStatusFilter(tab)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                statusFilter === tab
-                  ? 'bg-white/15 text-[#7c3aed] border border-[#8b5cf6]/40'
-                  : 'text-slate-600/60 hover:text-[#7c3aed] bg-white/5 border border-transparent'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+          <button
+            onClick={() => setStatusFilter('ACTIVE')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+              statusFilter === 'ACTIVE'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'text-slate-600 hover:text-[#7c3aed] bg-slate-50'
+            }`}
+          >
+            Active Tasks ({tasks.filter(t => t.status === 'PENDING').length})
+          </button>
+          <button
+            onClick={() => setStatusFilter('PAST_SUBMITTED')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+              statusFilter === 'PAST_SUBMITTED'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'text-slate-600 hover:text-[#7c3aed] bg-slate-50'
+            }`}
+          >
+            Past Submitted ({tasks.filter(t => t.status !== 'PENDING').length})
+          </button>
         </div>
       </div>
 
@@ -277,34 +322,43 @@ const StudentTasksPage = () => {
                 </div>
 
                 <div className="pt-3 border-t border-slate-200">
-                  {t.status === 'PENDING' && (
+                  {isDeadlineExpired(t.deadline) && t.status !== 'VERIFIED' ? (
                     <button
-                      onClick={() => handleOpenSubmitModal(t)}
-                      className="w-full py-2.5 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition shadow-sm text-xs font-bold shadow-md flex items-center justify-center gap-2"
+                      disabled
+                      className="w-full py-2.5 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 text-xs font-bold cursor-not-allowed flex items-center justify-center gap-2"
+                      title="The submission deadline for this task has passed."
                     >
-                      <Upload className="w-4 h-4 text-black" /> Submit Task Proof
+                      <Lock className="w-4 h-4 text-slate-400" /> Deadline Expired
                     </button>
-                  )}
-                  {t.status === 'SUBMITTED' && (
-                    <button
-                      onClick={() => handleOpenSubmitModal(t)}
-                      className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-slate-200 text-slate-900 font-bold text-xs flex items-center justify-center gap-2 transition"
-                    >
-                      <Upload className="w-4 h-4 text-[#7c3aed]" /> Update Submitted Proof
-                    </button>
-                  )}
-                  {t.status === 'VERIFIED' && (
-                    <div className="py-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-2">
-                      <CheckCircle2 className="w-4 h-4" /> Verified (+1 Pt Awarded)
-                    </div>
-                  )}
-                  {t.status === 'REJECTED' && (
-                    <button
-                      onClick={() => handleOpenSubmitModal(t)}
-                      className="w-full py-2.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 font-bold text-xs flex items-center justify-center gap-2 transition"
-                    >
-                      <XCircle className="w-4 h-4 text-rose-400" /> Resubmit Task Proof
-                    </button>
+                  ) : (
+                    <>
+                      {t.status === 'PENDING' && (
+                        <button
+                          onClick={() => handleOpenSubmitModal(t)}
+                          className="w-full py-2.5 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition shadow-sm text-xs font-bold shadow-md flex items-center justify-center gap-2"
+                        >
+                          <Upload className="w-4 h-4 text-black" /> Submit Task Proof
+                        </button>
+                      )}
+                      {t.status === 'SUBMITTED' && (
+                        <div className="py-2.5 rounded-xl bg-purple-500/20 text-[#8b5cf6] border border-[#8b5cf6]/30 font-bold text-xs flex items-center justify-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-[#8b5cf6]" /> Submitted
+                        </div>
+                      )}
+                      {t.status === 'VERIFIED' && (
+                        <div className="py-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" /> Verified (+1 Pt Awarded)
+                        </div>
+                      )}
+                      {t.status === 'REJECTED' && (
+                        <button
+                          onClick={() => handleOpenSubmitModal(t)}
+                          className="w-full py-2.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 font-bold text-xs flex items-center justify-center gap-2 transition"
+                        >
+                          <XCircle className="w-4 h-4 text-rose-400" /> Resubmit Task Proof
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

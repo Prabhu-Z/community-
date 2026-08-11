@@ -34,6 +34,43 @@ const FacultyDashboard = () => {
     taskType: 'COMMUNITY_TASK'
   });
 
+  const [taskFilter, setTaskFilter] = useState('active'); // 'active' or 'expired'
+
+  const isDeadlineExpired = (deadlineStr) => {
+    if (!deadlineStr) return false;
+    try {
+      const clean = deadlineStr.replace('T', ' ').trim();
+      if (clean.length >= 16) {
+        const parts = clean.substring(0, 16).split(' ');
+        const dateParts = parts[0].split('-');
+        const timeParts = parts[1].split(':');
+        const deadlineDate = new Date(
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2]),
+          parseInt(timeParts[0]),
+          parseInt(timeParts[1])
+        );
+        return new Date() > deadlineDate;
+      }
+      if (clean.length >= 10) {
+        const dateParts = clean.substring(0, 10).split('-');
+        const deadlineDate = new Date(
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2]),
+          23,
+          59,
+          59
+        );
+        return new Date() > deadlineDate;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return false;
+  };
+
   useEffect(() => {
     fetchDashboardAndTasks();
   }, []);
@@ -161,6 +198,9 @@ const FacultyDashboard = () => {
 
   const topCommunities = data.topCommunities || [];
 
+  const activeGroupedTasks = groupedTasks.filter((t) => !isDeadlineExpired(t.deadline));
+  const expiredGroupedTasks = groupedTasks.filter((t) => isDeadlineExpired(t.deadline));
+
   return (
     <div className="space-y-8 p-2 lg:p-4">
       {/* Faculty Header Banner */}
@@ -227,72 +267,167 @@ const FacultyDashboard = () => {
           </button>
         </div>
 
-        {groupedTasks.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 text-[#7c3aed] font-mono font-bold uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-4">Task Title & Details</th>
-                  <th className="py-3 px-4">Year & Deadline</th>
-                  <th className="py-3 px-4">Community Acceptance Status</th>
-                  <th className="py-3 px-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-800">
-                {groupedTasks.map((gt, idx) => {
-                  const hasAccepted = gt.acceptedCommunitiesCount > 0;
+        {/* Sub-tabs for Active vs Expired Tasks */}
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+          <button
+            onClick={() => setTaskFilter('active')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              taskFilter === 'active'
+                ? 'bg-gradient-to-r from-purple-600 to-purple-600 text-black shadow-sm font-extrabold'
+                : 'bg-white text-slate-600 hover:text-[#7c3aed] border border-slate-200'
+            }`}
+          >
+            <CheckSquare className="w-4 h-4 text-emerald-600" /> Active Tasks ({activeGroupedTasks.length})
+          </button>
 
-                  return (
-                    <tr
-                      key={idx}
-                      onClick={() => handleOpenDetailModal(gt)}
-                      className="hover:bg-slate-50 cursor-pointer transition group"
-                    >
-                      <td className="py-4 px-4">
-                        <div className="font-extrabold text-slate-900 text-sm group-hover:text-[#7c3aed] transition">{gt.title}</div>
-                        <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{gt.description}</div>
-                      </td>
-                      <td className="py-4 px-4 font-mono text-[11px]">
-                        <div>Target: <strong className="text-slate-900">{gt.targetYear}</strong></div>
-                        <div className="text-slate-500 font-medium">{gt.deadline}</div>
-                      </td>
-                      <td className="py-4 px-4">
-                        {hasAccepted ? (
-                          <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono text-[11px] font-bold flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              {gt.acceptedCommunitiesCount} / {gt.totalCommunitiesTargeted} Communities Accepted
+          <button
+            onClick={() => setTaskFilter('expired')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              taskFilter === 'expired'
+                ? 'bg-gradient-to-r from-purple-600 to-purple-600 text-black shadow-sm font-extrabold'
+                : 'bg-white text-slate-600 hover:text-[#7c3aed] border border-slate-200'
+            }`}
+          >
+            <Clock className="w-4 h-4 text-rose-500" /> Expired Tasks ({expiredGroupedTasks.length})
+          </button>
+        </div>
+
+        {taskFilter === 'active' && (
+          activeGroupedTasks.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[#7c3aed] font-mono font-bold uppercase tracking-wider text-[11px]">
+                    <th className="py-3 px-4">Task Title & Details</th>
+                    <th className="py-3 px-4">Year & Deadline</th>
+                    <th className="py-3 px-4">Community Acceptance Status</th>
+                    <th className="py-3 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-800">
+                  {activeGroupedTasks.map((gt, idx) => {
+                    const hasAccepted = gt.acceptedCommunitiesCount > 0;
+                    return (
+                      <tr
+                        key={idx}
+                        onClick={() => handleOpenDetailModal(gt)}
+                        className="hover:bg-slate-50 cursor-pointer transition group"
+                      >
+                        <td className="py-4 px-4">
+                          <div className="font-extrabold text-slate-900 text-sm group-hover:text-[#7c3aed] transition">{gt.title}</div>
+                          <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{gt.description}</div>
+                        </td>
+                        <td className="py-4 px-4 font-mono text-[11px]">
+                          <div>Target: <strong className="text-slate-900">{gt.targetYear}</strong></div>
+                          <div className="text-slate-500 font-medium">{gt.deadline}</div>
+                        </td>
+                        <td className="py-4 px-4">
+                          {hasAccepted ? (
+                            <div className="flex items-center gap-2">
+                              <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono text-[11px] font-bold flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                {gt.acceptedCommunitiesCount} / {gt.totalCommunitiesTargeted} Communities Accepted
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-mono text-[11px] font-bold flex items-center gap-1.5 inline-flex">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
+                              No community has accepted this task yet
                             </span>
-                          </div>
-                        ) : (
-                          <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-mono text-[11px] font-bold flex items-center gap-1.5 inline-flex">
-                            <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
-                            No community has accepted this task yet
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDetailModal(gt);
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-[#8b5cf6] text-[#7c3aed] hover:text-white border border-purple-200 font-bold text-xs inline-flex items-center gap-1 transition shadow-sm"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> View Acceptance <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="p-8 text-center text-xs text-slate-500 bg-slate-50 border border-dashed border-slate-300 rounded-2xl">
-            <CheckSquare className="w-8 h-8 text-[#8b5cf6] mx-auto mb-2" />
-            No tasks proposed yet. Click "Assign Task to All Communities" to start.
-          </div>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDetailModal(gt);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-[#8b5cf6] text-[#7c3aed] hover:text-white border border-purple-200 font-bold text-xs inline-flex items-center gap-1 transition shadow-sm"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> View Acceptance <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-8 text-center text-xs text-slate-500 bg-slate-50 border border-dashed border-slate-300 rounded-2xl">
+              <CheckSquare className="w-8 h-8 text-[#8b5cf6] mx-auto mb-2" />
+              No active proposed tasks found. Click "+ Propose New Task" to start.
+            </div>
+          )
+        )}
+
+        {taskFilter === 'expired' && (
+          expiredGroupedTasks.length > 0 ? (
+            <div className="overflow-x-auto opacity-75">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[#7c3aed] font-mono font-bold uppercase tracking-wider text-[11px]">
+                    <th className="py-3 px-4">Task Title & Details</th>
+                    <th className="py-3 px-4">Year & Deadline</th>
+                    <th className="py-3 px-4">Community Acceptance Status</th>
+                    <th className="py-3 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-800">
+                  {expiredGroupedTasks.map((gt, idx) => {
+                    const hasAccepted = gt.acceptedCommunitiesCount > 0;
+                    return (
+                      <tr
+                        key={idx}
+                        onClick={() => handleOpenDetailModal(gt)}
+                        className="hover:bg-slate-50 cursor-pointer transition group"
+                      >
+                        <td className="py-4 px-4">
+                          <div className="font-extrabold text-slate-900 text-sm group-hover:text-[#7c3aed] transition">{gt.title}</div>
+                          <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{gt.description}</div>
+                        </td>
+                        <td className="py-4 px-4 font-mono text-[11px]">
+                          <div>Target: <strong className="text-slate-900">{gt.targetYear}</strong></div>
+                          <div className="text-rose-500 font-bold">{gt.deadline} (Expired)</div>
+                        </td>
+                        <td className="py-4 px-4">
+                          {hasAccepted ? (
+                            <div className="flex items-center gap-2">
+                              <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono text-[11px] font-bold flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                {gt.acceptedCommunitiesCount} / {gt.totalCommunitiesTargeted} Communities Accepted
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-mono text-[11px] font-bold flex items-center gap-1.5 inline-flex">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
+                              No community has accepted this task yet
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDetailModal(gt);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-[#8b5cf6] text-[#7c3aed] hover:text-white border border-purple-200 font-bold text-xs inline-flex items-center gap-1 transition shadow-sm"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> View Acceptance <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-8 text-center text-xs text-slate-500 bg-slate-50 border border-dashed border-slate-300 rounded-2xl">
+              <Clock className="w-8 h-8 text-rose-500 mx-auto mb-2" />
+              No expired proposed tasks found.
+            </div>
+          )
         )}
       </div>
 
@@ -490,11 +625,10 @@ const FacultyDashboard = () => {
               <div>
                 <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">Deadline Date & Time</label>
                 <input
-                  type="text"
+                  type="datetime-local"
                   required
-                  value={taskForm.deadline}
-                  onChange={(e) => setTaskForm({ ...taskForm, deadline: e.target.value })}
-                  placeholder="YYYY-MM-DD 23:59"
+                  value={taskForm.deadline ? taskForm.deadline.replace(' ', 'T') : ''}
+                  onChange={(e) => setTaskForm({ ...taskForm, deadline: e.target.value.replace('T', ' ') })}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-[#8b5cf6]"
                 />
               </div>

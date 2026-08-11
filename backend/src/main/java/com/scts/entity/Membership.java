@@ -36,9 +36,15 @@ public class Membership {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "coordinator_approved", nullable = false)
+    private Boolean coordinatorApproved = false;
+
+    @Column(name = "admin_approved", nullable = false)
+    private Boolean adminApproved = false;
+
     public Membership() {}
 
-    public Membership(Long id, Student student, Community community, CommunityRole role, MembershipStatus status, LocalDate joinedDate, LocalDateTime updatedAt) {
+    public Membership(Long id, Student student, Community community, CommunityRole role, MembershipStatus status, LocalDate joinedDate, LocalDateTime updatedAt, Boolean coordinatorApproved, Boolean adminApproved) {
         this.id = id;
         this.student = student;
         this.community = community;
@@ -46,14 +52,23 @@ public class Membership {
         this.status = status;
         this.joinedDate = joinedDate;
         this.updatedAt = updatedAt;
+        this.coordinatorApproved = coordinatorApproved != null ? coordinatorApproved : false;
+        this.adminApproved = adminApproved != null ? adminApproved : false;
     }
 
     @PrePersist
     @PreUpdate
     protected void onSave() {
         this.updatedAt = LocalDateTime.now();
-        if (this.joinedDate == null && this.status == MembershipStatus.APPROVED) {
-            this.joinedDate = LocalDate.now();
+        if (this.status == MembershipStatus.APPROVED) {
+            this.coordinatorApproved = true;
+            this.adminApproved = true;
+        }
+        if (this.coordinatorApproved && this.adminApproved) {
+            this.status = MembershipStatus.APPROVED;
+            if (this.joinedDate == null) {
+                this.joinedDate = LocalDate.now();
+            }
         }
     }
 
@@ -71,6 +86,10 @@ public class Membership {
     public void setJoinedDate(LocalDate joinedDate) { this.joinedDate = joinedDate; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public Boolean getCoordinatorApproved() { return coordinatorApproved; }
+    public void setCoordinatorApproved(Boolean coordinatorApproved) { this.coordinatorApproved = coordinatorApproved; }
+    public Boolean getAdminApproved() { return adminApproved; }
+    public void setAdminApproved(Boolean adminApproved) { this.adminApproved = adminApproved; }
 
     public static MembershipBuilder builder() { return new MembershipBuilder(); }
 
@@ -82,6 +101,8 @@ public class Membership {
         private MembershipStatus status;
         private LocalDate joinedDate;
         private LocalDateTime updatedAt;
+        private Boolean coordinatorApproved;
+        private Boolean adminApproved;
 
         public MembershipBuilder id(Long id) { this.id = id; return this; }
         public MembershipBuilder student(Student student) { this.student = student; return this; }
@@ -90,9 +111,11 @@ public class Membership {
         public MembershipBuilder status(MembershipStatus status) { this.status = status; return this; }
         public MembershipBuilder joinedDate(LocalDate joinedDate) { this.joinedDate = joinedDate; return this; }
         public MembershipBuilder updatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; return this; }
+        public MembershipBuilder coordinatorApproved(Boolean coordinatorApproved) { this.coordinatorApproved = coordinatorApproved; return this; }
+        public MembershipBuilder adminApproved(Boolean adminApproved) { this.adminApproved = adminApproved; return this; }
 
         public Membership build() {
-            return new Membership(id, student, community, role, status, joinedDate, updatedAt);
+            return new Membership(id, student, community, role, status, joinedDate, updatedAt, coordinatorApproved, adminApproved);
         }
     }
 }

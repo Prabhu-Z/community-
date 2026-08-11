@@ -3,12 +3,13 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import PrintReportModal from '../../components/reports/PrintReportModal';
-import { FileText, Printer, Building2 } from 'lucide-react';
+import { FileText, Printer, Building2, User } from 'lucide-react';
 
 const CoordinatorReportsPage = () => {
   const { user } = useAuth();
   const [community, setCommunity] = useState(null);
   const [communities, setCommunities] = useState([]);
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reportModal, setReportModal] = useState(false);
   const [reportData, setReportData] = useState(null);
@@ -36,8 +37,13 @@ const CoordinatorReportsPage = () => {
       setCommunity(myCommunity);
       if (myCommunity) {
         setCommunities([myCommunity]);
+        
+        // Fetch approved members of this community
+        const memsRes = await api.get(`/memberships/community/${myCommunity.id}`);
+        setMembers((memsRes.data || []).filter(m => m.status === 'APPROVED'));
       } else {
         setCommunities([]);
+        setMembers([]);
       }
     } catch (err) {
       console.error('Error fetching communities:', err);
@@ -53,6 +59,52 @@ const CoordinatorReportsPage = () => {
       setReportModal(true);
     } catch (err) {
       alert('Failed to generate community report.');
+    }
+  };
+
+  const handleGenerateStudentReport = async (studentId) => {
+    try {
+      const res = await api.get(`/reports/student/${studentId}`);
+      setReportData(res.data);
+      setReportModal(true);
+    } catch (err) {
+      alert('Failed to generate student report.');
+    }
+  };
+
+  const handleDownloadCsv = async (communityId, communityName) => {
+    try {
+      const response = await api.get(`/reports/community/${communityId}/csv`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${communityName.replace(/\s+/g, '_')}_student_metrics_report.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      alert('Failed to download CSV report.');
+    }
+  };
+
+  const handleDownloadStudentCsv = async (studentId, studentName) => {
+    try {
+      const response = await api.get(`/reports/student/${studentId}/csv`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${studentName.replace(/\s+/g, '_')}_performance_report.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      alert('Failed to download student CSV report.');
     }
   };
 
@@ -89,14 +141,45 @@ const CoordinatorReportsPage = () => {
               <p className="text-xs text-[#7c3aed] font-sans">{c.category}</p>
               <p className="text-xs text-slate-500 mt-1">Admin Lead: {c.facultyCoordinator}</p>
             </div>
-            <button
-              onClick={() => handleGenerateReport(c.id)}
-              className="px-4 py-2 rounded-xl bg-purple-600 text-arsenic-950 font-bold text-xs hover:bg-purple-600 transition flex items-center gap-1.5"
-            >
-              <Printer className="w-4 h-4" /> Print Report
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => handleDownloadCsv(c.id, c.name)}
+                className="px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-[#7c3aed] transition flex items-center gap-1.5 justify-center shadow-sm"
+              >
+                <FileText className="w-4 h-4" /> Export CSV Report
+              </button>
+            </div>
           </div>
         ))}
+      </div>
+
+      {/* Community Members List for Transcripts */}
+      <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 lg:p-8 rounded-3xl border border-slate-100">
+        <h3 className="font-sans text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <User className="w-5 h-5 text-[#8b5cf6]" /> Community Member Transcripts ({members.length})
+        </h3>
+        <div className="space-y-3">
+          {members.length > 0 ? (
+            members.map((m) => (
+              <div key={m.id} className="bg-white border border-slate-200 shadow-sm rounded-2xl p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+                <div>
+                  <span className="font-sans font-bold text-slate-900 text-base">{m.studentName}</span>
+                  <p className="text-xs text-slate-500 font-mono">Code: {m.studentCode} • {m.department} • Role: {m.role}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleDownloadStudentCsv(m.studentId, m.studentName)}
+                    className="px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-[#7c3aed] transition flex items-center gap-1.5 shadow-sm"
+                  >
+                    <FileText className="w-4 h-4" /> Export CSV
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-slate-500">No approved members in this community chapter yet.</p>
+          )}
+        </div>
       </div>
 
       <PrintReportModal isOpen={reportModal} onClose={() => setReportModal(false)} reportData={reportData} />

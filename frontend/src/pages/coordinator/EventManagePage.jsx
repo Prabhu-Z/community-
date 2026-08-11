@@ -20,6 +20,14 @@ const EventManagePage = () => {
   const [registrations, setRegistrations] = useState([]);
   const [loadingRegs, setLoadingRegs] = useState(false);
 
+  // Cross-Community Collaboration States
+  const [allCommunities, setAllCommunities] = useState([]);
+  const [collabModalOpen, setCollabModalOpen] = useState(false);
+  const [selectedEventForCollab, setSelectedEventForCollab] = useState(null);
+  const [selectedTargetCommunityId, setSelectedTargetCommunityId] = useState('');
+  const [collabMessage, setCollabMessage] = useState('');
+  const [requestingCollab, setRequestingCollab] = useState(false);
+
   const [formData, setFormData] = useState({
     communityId: 1,
     title: '',
@@ -56,6 +64,7 @@ const EventManagePage = () => {
       }
 
       setCommunity(myCommunity);
+      setAllCommunities(commRes.data || []);
 
       if (myCommunity?.id) {
         setFormData(prev => ({ ...prev, communityId: myCommunity.id }));
@@ -91,9 +100,9 @@ const EventManagePage = () => {
     try {
       await api.put(`/events/${eventId}/approve`);
       alert(`✅ Event proposal "${title}" has been approved and published!`);
-      fetchEventsAndProposals();
+      fetchCommunityAndEvents();
     } catch (err) {
-      alert('Failed to approve event proposal.');
+      alert('Failed to approve event proposal: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -104,9 +113,32 @@ const EventManagePage = () => {
     try {
       await api.put(`/events/${eventId}/reject`);
       alert(`Decline recorded for event proposal "${title}".`);
-      fetchEventsAndProposals();
+      fetchCommunityAndEvents();
     } catch (err) {
-      alert('Failed to decline proposal.');
+      alert('Failed to decline proposal: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleOpenCollabModal = (eventObj) => {
+    setSelectedEventForCollab(eventObj);
+    setSelectedTargetCommunityId('');
+    setCollabMessage('');
+    setCollabModalOpen(true);
+  };
+
+  const handleSendCollabRequest = async (e) => {
+    e.preventDefault();
+    if (!selectedTargetCommunityId || !selectedEventForCollab || requestingCollab) return;
+
+    setRequestingCollab(true);
+    try {
+      await api.post(`/collaboration-requests?eventId=${selectedEventForCollab.id}&targetCommunityId=${selectedTargetCommunityId}&message=${encodeURIComponent(collabMessage)}`);
+      alert('🎉 Collaboration request sent successfully!');
+      setCollabModalOpen(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to send collaboration request.');
+    } finally {
+      setRequestingCollab(false);
     }
   };
 
@@ -129,9 +161,9 @@ const EventManagePage = () => {
         status: 'UPCOMING',
         coordinatorName: '',
       });
-      fetchEventsAndProposals();
+      fetchCommunityAndEvents();
     } catch (err) {
-      alert('Failed to create event.');
+      alert('Failed to create event: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -317,12 +349,18 @@ const EventManagePage = () => {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                <div className="pt-3 border-t border-slate-100 flex gap-3" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleOpenRegistrationsModal(evt)}
-                    className="w-full py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-200 text-[#8b5cf6] font-bold text-xs flex items-center justify-center gap-2 transition"
+                    className="flex-1 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-200 text-[#8b5cf6] font-bold text-xs flex items-center justify-center gap-1.5 transition"
                   >
-                    <Users className="w-4 h-4 text-[#7c3aed]" /> View Registered Students ({evt.currentRegistrations})
+                    <Users className="w-3.5 h-3.5 text-[#7c3aed]" /> View Registrations
+                  </button>
+                  <button
+                    onClick={() => handleOpenCollabModal(evt)}
+                    className="flex-1 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-[#7c3aed] font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm"
+                  >
+                    <Globe className="w-3.5 h-3.5 text-[#8b5cf6]" /> Invite Partner
                   </button>
                 </div>
               </div>
@@ -483,6 +521,75 @@ const EventManagePage = () => {
           >
             Publish Event
           </button>
+        </form>
+      </Modal>
+
+      {/* CROSS-COMMUNITY COLLABORATION INVITATION MODAL */}
+      <Modal 
+        isOpen={collabModalOpen} 
+        onClose={() => setCollabModalOpen(false)} 
+        title="Invite Partner Community to Collaborate"
+      >
+        <form onSubmit={handleSendCollabRequest} className="space-y-4 text-xs text-slate-800">
+          <div>
+            <h3 className="font-bold text-sm text-slate-900 mb-1">
+              Event: {selectedEventForCollab?.title}
+            </h3>
+            <p className="text-slate-500 leading-relaxed">
+              Send a collaboration invite to another community's Coordinator. Once accepted, they can nominate specific students from their community to register and participate.
+            </p>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Select Target Partner Community
+            </label>
+            <select
+              value={selectedTargetCommunityId}
+              onChange={(e) => setSelectedTargetCommunityId(e.target.value)}
+              required
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-950 focus:border-[#8b5cf6] font-semibold"
+            >
+              <option value="">-- Choose Community --</option>
+              {allCommunities
+                .filter((c) => c.id !== community?.id)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Collaboration Message / Invitation Note
+            </label>
+            <textarea
+              rows={3}
+              value={collabMessage}
+              onChange={(e) => setCollabMessage(e.target.value)}
+              placeholder="E.g., We are hosting a hackathon and would love to have members of your Competitive Coding community participate..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-950 focus:border-[#8b5cf6] font-semibold"
+            />
+          </div>
+
+          <div className="pt-3 border-t border-slate-150 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setCollabModalOpen(false)}
+              className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!selectedTargetCommunityId || requestingCollab}
+              className="px-5 py-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold flex items-center gap-1.5 disabled:opacity-50 active:scale-95 shadow-sm transition"
+            >
+              {requestingCollab ? 'Sending Invite...' : 'Send Collaboration Invite'}
+            </button>
+          </div>
         </form>
       </Modal>
     </div>

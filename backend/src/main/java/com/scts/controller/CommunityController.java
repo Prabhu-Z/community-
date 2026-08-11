@@ -57,4 +57,10 @@ public class CommunityController {
         BulkImportResultDTO result = studentImportService.importStudentsToCommunity(id, file);
         return ResponseEntity.ok(result);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCommunity(@PathVariable Long id) {
+        communityService.deleteCommunity(id);
+        return ResponseEntity.noContent().build();
+    }
 }

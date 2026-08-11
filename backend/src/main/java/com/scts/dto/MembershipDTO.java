@@ -16,10 +16,12 @@ public class MembershipDTO {
     private CommunityRole role;
     private MembershipStatus status;
     private LocalDate joinedDate;
+    private Boolean coordinatorApproved;
+    private Boolean adminApproved;
 
     public MembershipDTO() {}
 
-    public MembershipDTO(Long id, Long studentId, String studentName, String studentCode, String department, Long communityId, String communityName, String communityCategory, CommunityRole role, MembershipStatus status, LocalDate joinedDate) {
+    public MembershipDTO(Long id, Long studentId, String studentName, String studentCode, String department, Long communityId, String communityName, String communityCategory, CommunityRole role, MembershipStatus status, LocalDate joinedDate, Boolean coordinatorApproved, Boolean adminApproved) {
         this.id = id;
         this.studentId = studentId;
         this.studentName = studentName;
@@ -31,6 +33,8 @@ public class MembershipDTO {
         this.role = role;
         this.status = status;
         this.joinedDate = joinedDate;
+        this.coordinatorApproved = coordinatorApproved != null ? coordinatorApproved : false;
+        this.adminApproved = adminApproved != null ? adminApproved : false;
     }
 
     public Long getId() { return id; }
@@ -55,6 +59,10 @@ public class MembershipDTO {
     public void setStatus(MembershipStatus status) { this.status = status; }
     public LocalDate getJoinedDate() { return joinedDate; }
     public void setJoinedDate(LocalDate joinedDate) { this.joinedDate = joinedDate; }
+    public Boolean getCoordinatorApproved() { return coordinatorApproved; }
+    public void setCoordinatorApproved(Boolean coordinatorApproved) { this.coordinatorApproved = coordinatorApproved; }
+    public Boolean getAdminApproved() { return adminApproved; }
+    public void setAdminApproved(Boolean adminApproved) { this.adminApproved = adminApproved; }
 
     public static MembershipDTOBuilder builder() { return new MembershipDTOBuilder(); }
 
@@ -70,6 +78,8 @@ public class MembershipDTO {
         private CommunityRole role;
         private MembershipStatus status;
         private LocalDate joinedDate;
+        private Boolean coordinatorApproved;
+        private Boolean adminApproved;
 
         public MembershipDTOBuilder id(Long id) { this.id = id; return this; }
         public MembershipDTOBuilder studentId(Long studentId) { this.studentId = studentId; return this; }
@@ -82,9 +92,11 @@ public class MembershipDTO {
         public MembershipDTOBuilder role(CommunityRole role) { this.role = role; return this; }
         public MembershipDTOBuilder status(MembershipStatus status) { this.status = status; return this; }
         public MembershipDTOBuilder joinedDate(LocalDate joinedDate) { this.joinedDate = joinedDate; return this; }
+        public MembershipDTOBuilder coordinatorApproved(Boolean coordinatorApproved) { this.coordinatorApproved = coordinatorApproved; return this; }
+        public MembershipDTOBuilder adminApproved(Boolean adminApproved) { this.adminApproved = adminApproved; return this; }
 
         public MembershipDTO build() {
-            return new MembershipDTO(id, studentId, studentName, studentCode, department, communityId, communityName, communityCategory, role, status, joinedDate);
+            return new MembershipDTO(id, studentId, studentName, studentCode, department, communityId, communityName, communityCategory, role, status, joinedDate, coordinatorApproved, adminApproved);
         }
     }
 }

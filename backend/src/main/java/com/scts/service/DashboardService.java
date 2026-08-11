@@ -29,9 +29,10 @@ public class DashboardService {
     private final AchievementRepository achievementRepository;
     private final TaskAssignmentRepository taskAssignmentRepository;
     private final TaskSubmissionRepository taskSubmissionRepository;
+    private final LeaderboardService leaderboardService;
 
     @Autowired
-    public DashboardService(StudentService studentService, CommunityService communityService, EventService eventService, ActivityService activityService, AnnouncementService announcementService, StudentRepository studentRepository, CommunityRepository communityRepository, EventRepository eventRepository, MembershipRepository membershipRepository, EventRegistrationRepository registrationRepository, AttendanceRepository attendanceRepository, VolunteerHourRepository volunteerHourRepository, AchievementRepository achievementRepository, TaskAssignmentRepository taskAssignmentRepository, TaskSubmissionRepository taskSubmissionRepository) {
+    public DashboardService(StudentService studentService, CommunityService communityService, EventService eventService, ActivityService activityService, AnnouncementService announcementService, StudentRepository studentRepository, CommunityRepository communityRepository, EventRepository eventRepository, MembershipRepository membershipRepository, EventRegistrationRepository registrationRepository, AttendanceRepository attendanceRepository, VolunteerHourRepository volunteerHourRepository, AchievementRepository achievementRepository, TaskAssignmentRepository taskAssignmentRepository, TaskSubmissionRepository taskSubmissionRepository, LeaderboardService leaderboardService) {
         this.studentService = studentService;
         this.communityService = communityService;
         this.eventService = eventService;
@@ -47,6 +48,7 @@ public class DashboardService {
         this.achievementRepository = achievementRepository;
         this.taskAssignmentRepository = taskAssignmentRepository;
         this.taskSubmissionRepository = taskSubmissionRepository;
+        this.leaderboardService = leaderboardService;
     }
 
     public StudentDashboard getStudentDashboard(Long studentId) {
@@ -93,6 +95,7 @@ public class DashboardService {
         long totalMembers = membershipRepository.countActiveMembersByCommunityId(finalCommId);
         long pendingRequests = membershipRepository.findByStatus(MembershipStatus.PENDING).stream()
                 .filter(m -> m.getCommunity().getId().equals(finalCommId))
+                .filter(m -> !Boolean.TRUE.equals(m.getCoordinatorApproved()))
                 .count();
 
         List<EventDTO> events = eventService.getAllEvents().stream()
@@ -104,6 +107,7 @@ public class DashboardService {
 
         List<MembershipDTO> pendingMembershipDTOs = membershipRepository.findByStatus(MembershipStatus.PENDING).stream()
                 .filter(m -> m.getCommunity().getId().equals(finalCommId))
+                .filter(m -> !Boolean.TRUE.equals(m.getCoordinatorApproved()))
                 .map(m -> MembershipDTO.builder()
                         .id(m.getId())
                         .studentId(m.getStudent().getId())
@@ -267,6 +271,32 @@ public class DashboardService {
         Map<String, Object> tt2 = new HashMap<>(); tt2.put("name", "Coordinator Daily Tasks"); tt2.put("value", dailyTaskCount);
         taskTypeChartData.add(tt1); taskTypeChartData.add(tt2);
 
+        List<Map<String, Object>> eventAttendanceChartData = new ArrayList<>();
+        for (Event e : communityEvents) {
+            long registered = registrationRepository.countByEventId(e.getId());
+            long attended = attendanceRepository.findByEventId(e.getId()).stream()
+                    .filter(a -> "PRESENT".equalsIgnoreCase(a.getStatus()))
+                    .count();
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", e.getTitle());
+            map.put("registered", registered);
+            map.put("attended", attended);
+            eventAttendanceChartData.add(map);
+        }
+
+        // Leaderboard points distribution by department
+        List<LeaderboardEntryDTO> leaderboard = leaderboardService.getCommunityLeaderboard(community.getId());
+        Map<String, List<LeaderboardEntryDTO>> groupedByDept = leaderboard.stream()
+                .collect(Collectors.groupingBy(entry -> entry.getDepartment() != null ? entry.getDepartment() : "General"));
+        List<Map<String, Object>> departmentPointsChartData = new ArrayList<>();
+        for (Map.Entry<String, List<LeaderboardEntryDTO>> entry : groupedByDept.entrySet()) {
+            double avgPoints = entry.getValue().stream().mapToInt(LeaderboardEntryDTO::getPoints).average().orElse(0.0);
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", entry.getKey());
+            map.put("value", Math.round(avgPoints));
+            departmentPointsChartData.add(map);
+        }
+
         return CommunityAnalyticsDTO.builder()
                 .communityId(community.getId())
                 .communityName(community.getName())
@@ -285,6 +315,8 @@ public class DashboardService {
                 .taskStatusChartData(taskStatusChartData)
                 .participationRateChartData(participationRateChartData)
                 .taskTypeChartData(taskTypeChartData)
+                .eventAttendanceChartData(eventAttendanceChartData)
+                .departmentPointsChartData(departmentPointsChartData)
                 .build();
     }
 }

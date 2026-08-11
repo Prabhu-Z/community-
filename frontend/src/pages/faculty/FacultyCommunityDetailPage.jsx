@@ -19,7 +19,11 @@ import {
   ChevronRight,
   User,
   Sparkles,
-  Layers
+  Layers,
+  Trash2,
+  ArrowRightLeft,
+  Eye,
+  UserMinus
 } from 'lucide-react';
 
 const FacultyCommunityDetailPage = () => {
@@ -31,6 +35,12 @@ const FacultyCommunityDetailPage = () => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchMember, setSearchMember] = useState('');
+
+  // States for transferring students
+  const [movingMember, setMovingMember] = useState(null);
+  const [allCommunities, setAllCommunities] = useState([]);
+  const [targetCommunityId, setTargetCommunityId] = useState('');
+  const [staffUsers, setStaffUsers] = useState([]);
 
   // Modals on detail page
   const [assignModal, setAssignModal] = useState(false);
@@ -60,17 +70,21 @@ const FacultyCommunityDetailPage = () => {
   const fetchCommunityData = async () => {
     setLoading(true);
     try {
-      const [commRes, membRes, groupsRes] = await Promise.all([
+      const [commRes, membRes, groupsRes, staffRes, allCommRes] = await Promise.all([
         api.get(`/communities/${id}`),
         api.get(`/memberships/community/${id}`).catch(() => ({ data: [] })),
         api.get(`/community-groups/community/${id}`)
           .catch(() => api.get(`/community-groups/community/${id}/approved`))
-          .catch(() => ({ data: [] }))
+          .catch(() => ({ data: [] })),
+        api.get('/users/coordinators').catch(() => ({ data: [] })),
+        api.get('/communities').catch(() => ({ data: [] }))
       ]);
 
       setCommunity(commRes.data);
       setMembers(membRes.data || []);
       setGroups(groupsRes.data || []);
+      setStaffUsers(staffRes.data || []);
+      setAllCommunities(allCommRes.data || []);
 
       if (commRes.data) {
         setAssignData({
@@ -87,6 +101,26 @@ const FacultyCommunityDetailPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const extractOnlyName = (userObj) => {
+    if (!userObj) return '';
+    const nameStr = userObj.name && userObj.name.trim() ? userObj.name.trim() : '';
+    
+    if (nameStr && !nameStr.includes('@')) {
+      return nameStr;
+    }
+
+    const emailOrName = nameStr || userObj.email || userObj.studentName || '';
+    if (emailOrName.includes('@')) {
+      const rawUsername = emailOrName.split('@')[0];
+      return rawUsername
+        .split('.')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+    }
+
+    return emailOrName;
   };
 
   const handleAssignCoordinator = async (e) => {
@@ -115,6 +149,57 @@ const FacultyCommunityDetailPage = () => {
       console.error('Failed to update community & coordinators:', err);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleInitiateMove = async (member) => {
+    const membershipId = member.id || members.find(mem => mem.studentId === (member.studentId || member.id))?.id;
+    if (!membershipId) {
+      alert("Could not locate membership for this student.");
+      return;
+    }
+    const studentName = member.studentName || member.name || "Student";
+    setMovingMember({ id: membershipId, studentName });
+    setTargetCommunityId('');
+    try {
+      const res = await api.get('/communities');
+      setAllCommunities(res.data || []);
+    } catch (err) {
+      console.error('Error fetching communities for transfer:', err);
+    }
+  };
+
+  const handleExecuteMove = async () => {
+    if (!targetCommunityId || !movingMember) return;
+    try {
+      setLoading(true);
+      await api.put(`/memberships/${movingMember.id}/move?targetCommunityId=${targetCommunityId}`);
+      setMovingMember(null);
+      fetchCommunityData();
+    } catch (err) {
+      console.error('Error moving student:', err);
+      alert('Failed to move student.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveStudent = async (member) => {
+    const membershipId = member.id || members.find(mem => mem.studentId === (member.studentId || member.id))?.id;
+    if (!membershipId) {
+      alert("Could not locate membership for this student.");
+      return;
+    }
+    if (!window.confirm('Are you sure you want to remove this student from the community?')) return;
+    try {
+      setLoading(true);
+      await api.delete(`/memberships/${membershipId}`);
+      fetchCommunityData();
+    } catch (err) {
+      console.error('Error removing member:', err);
+      alert('Failed to remove student.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -155,6 +240,52 @@ const FacultyCommunityDetailPage = () => {
     }
   };
 
+  const handleDeleteCommunity = async () => {
+    if (!community) return;
+    if (window.confirm(`Are you sure you want to permanently delete the community "${community.name}"? This action will remove all associated members, events, registrations, tasks, and historical records. This action cannot be undone.`)) {
+      try {
+        await api.delete(`/communities/${community.id}`);
+        navigate('/faculty/communities');
+      } catch (err) {
+        alert(err.response?.data?.message || 'Failed to delete community.');
+      }
+    }
+  };
+
+  const handleDismantleGroup = async (groupId, groupName) => {
+    const confirmed = window.confirm(`Are you sure you want to dismantle the group "${groupName}"? All team memberships will be deleted.`);
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      await api.delete(`/community-groups/${groupId}`);
+      alert(`Group "${groupName}" dismantled successfully.`);
+      fetchCommunityData();
+    } catch (err) {
+      console.error('Error dismantling group:', err);
+      alert('Failed to dismantle group.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveFromGroup = async (groupId, studentId, studentName) => {
+    const confirmed = window.confirm(`Are you sure you want to remove ${studentName} from this group?`);
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      await api.post(`/community-groups/${groupId}/leave?studentId=${studentId}`);
+      alert(`Removed ${studentName} from group roster successfully.`);
+      fetchCommunityData();
+    } catch (err) {
+      console.error('Error removing student from group:', err);
+      alert(err.response?.data?.message || 'Failed to remove member from group.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) return <LoadingSpinner label="Loading community hierarchy & leader teams..." />;
 
   if (!community) {
@@ -167,6 +298,42 @@ const FacultyCommunityDetailPage = () => {
       </div>
     );
   }
+
+  // Exclude staff/coordinators who are ALREADY assigned to any community
+  const assignedCoordinatorUserIds = allCommunities
+    .map(c => c.coordinatorUserId)
+    .filter(Boolean);
+
+  const assignedCoordinatorNamesOrEmails = allCommunities.flatMap(c => [
+    c.facultyCoordinator?.toLowerCase(),
+    c.studentCoordinator?.toLowerCase()
+  ]).filter(Boolean);
+
+  const availableStaffUsers = staffUsers.filter(u => {
+    if (!community) return true;
+    
+    // If user is currently assigned as coordinator of THIS selected community, keep them available
+    if (community.coordinatorUserId && u.id === community.coordinatorUserId) {
+      return true;
+    }
+    if (community.facultyCoordinator && community.facultyCoordinator.toLowerCase().includes(u.email?.toLowerCase())) {
+      return true;
+    }
+
+    // Exclude if user ID is already a community coordinator of ANY OTHER community
+    const isAssignedById = assignedCoordinatorUserIds.includes(u.id);
+
+    // Exclude if user email/name matches any existing community coordinator
+    const userEmailLower = (u.email || '').toLowerCase();
+    const userNameCleanLower = extractOnlyName(u).toLowerCase();
+    const isAssignedByNameOrEmail = assignedCoordinatorNamesOrEmails.some(assigned => {
+      if (!assigned) return false;
+      return assigned.includes(userEmailLower) || (userNameCleanLower && assigned.includes(userNameCleanLower));
+    });
+
+    // ONLY NON-COMMUNITY COORDINATORS SHOULD APPEAR
+    return !isAssignedById && !isAssignedByNameOrEmail;
+  });
 
   // Identify Student Leader Memberships
   const isLeaderRole = (role) => {
@@ -259,6 +426,12 @@ const FacultyCommunityDetailPage = () => {
         {/* Top Control Buttons Requested by User */}
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <button
+            onClick={handleDeleteCommunity}
+            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95"
+          >
+            <Trash2 className="w-4 h-4 text-rose-500 animate-pulse" /> Delete Community
+          </button>
+          <button
             onClick={() => setImportModal(true)}
             className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-[#7c3aed] border border-purple-200 font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95"
           >
@@ -323,7 +496,7 @@ const FacultyCommunityDetailPage = () => {
             </div>
             <div className="overflow-hidden space-y-1">
               <div className="text-[10px] text-slate-500 uppercase tracking-widest font-extrabold">Faculty Lead / Advisor</div>
-              <div className="text-lg font-extrabold text-slate-900 truncate">{community.facultyCoordinator || 'Dr. Faculty Advisor'}</div>
+              <div className="text-lg font-extrabold text-slate-900 truncate">{community.facultyCoordinator || 'Unassigned'}</div>
               <span className="inline-block text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-[#7c3aed] border border-purple-200">
                 FACULTY ADVISOR
               </span>
@@ -372,10 +545,42 @@ const FacultyCommunityDetailPage = () => {
                     </div>
                   </div>
 
-                  <div className="shrink-0 text-right">
+                  <div className="shrink-0 text-right flex items-center gap-2">
                     <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-white border border-amber-200 text-amber-900 inline-block shadow-sm">
                       Team Capacity: {team.members.length} / {team.maxTeamSize} Members
                     </span>
+                    <div className="flex items-center gap-1 border-l border-amber-300 pl-2">
+                      <button
+                        onClick={() => navigate(`/faculty/students/${members.find(mem => mem.studentName === team.leaderName)?.studentId || members.find(mem => mem.studentName === team.leaderName)?.id}`)}
+                        className="p-1.5 rounded-xl bg-white hover:bg-purple-100 text-[#7c3aed] border border-amber-200 transition shadow-sm"
+                        title="View Student Leader Extracurricular Portfolio Dashboard"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleInitiateMove({ studentName: team.leaderName, id: members.find(mem => mem.studentName === team.leaderName)?.id })}
+                        className="p-1.5 rounded-xl bg-white hover:bg-purple-100 text-[#7c3aed] border border-amber-200 transition shadow-sm"
+                        title="Move Student Leader to another community"
+                      >
+                        <ArrowRightLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleRemoveStudent({ studentName: team.leaderName, id: members.find(mem => mem.studentName === team.leaderName)?.id })}
+                        className="p-1.5 rounded-xl bg-white hover:bg-rose-100 text-rose-600 border border-amber-200 transition shadow-sm"
+                        title="Remove Student Leader from this community"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      {team.groupId && (
+                        <button
+                          onClick={() => handleDismantleGroup(team.groupId, team.groupName)}
+                          className="px-2.5 py-1.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition shadow-md flex items-center gap-1 font-bold text-[10px]"
+                          title="Dismantle / Delete this Student Group (Coordinators/Advisors Only)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Dismantle Group
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -401,9 +606,43 @@ const FacultyCommunityDetailPage = () => {
                             </div>
                           </div>
 
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
-                            TEAM MEMBER
-                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              TEAM MEMBER
+                            </span>
+                            <div className="flex items-center gap-1 border-l border-slate-200 pl-1.5">
+                              <button
+                                onClick={() => navigate(`/faculty/students/${m.studentId || m.id}`)}
+                                className="p-1 rounded-lg hover:bg-purple-100 text-[#7c3aed] transition animate-none"
+                                title="View Student Extracurricular Portfolio Dashboard"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleInitiateMove(m)}
+                                className="p-1 rounded-lg hover:bg-purple-100 text-[#7c3aed] transition animate-none"
+                                title="Move student to another community"
+                              >
+                                <ArrowRightLeft className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleRemoveStudent(m)}
+                                className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition animate-none"
+                                title="Remove student from this community"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                              {team.groupId && (
+                                <button
+                                  onClick={() => handleRemoveFromGroup(team.groupId, m.studentId || m.id, m.studentName || m.name)}
+                                  className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition animate-none"
+                                  title="Remove student from this student leader group"
+                                >
+                                  <UserMinus className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -457,6 +696,7 @@ const FacultyCommunityDetailPage = () => {
                   <th className="py-3 px-4">Department & Year</th>
                   <th className="py-3 px-4">Role</th>
                   <th className="py-3 px-4 text-right">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-800">
@@ -477,6 +717,31 @@ const FacultyCommunityDetailPage = () => {
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <Badge status={m.status}>{m.status}</Badge>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => navigate(`/faculty/students/${m.studentId || m.id}`)}
+                          className="p-1 rounded-lg hover:bg-purple-100 text-[#7c3aed] transition animate-none"
+                          title="View Student Extracurricular Portfolio Dashboard"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleInitiateMove(m)}
+                          className="p-1 rounded-lg hover:bg-purple-100 text-[#7c3aed] transition animate-none"
+                          title="Move student to another community"
+                        >
+                          <ArrowRightLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleRemoveStudent(m)}
+                          className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition animate-none"
+                          title="Remove student from this community"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -529,6 +794,37 @@ const FacultyCommunityDetailPage = () => {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs"
               />
             </div>
+          </div>
+
+          {/* 1. Unassigned Coordinators Dropdown -> Auto-fills Faculty Coordinator (Name Only) */}
+          <div>
+            <label className="block text-xs font-bold text-[#7c3aed] mb-1">
+              Select Unassigned Coordinator Staff Member ({availableStaffUsers.length} Available)
+            </label>
+            <select
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  const u = availableStaffUsers.find((user) => user.email === val || user.id.toString() === val);
+                  if (u) {
+                    const cleanName = extractOnlyName(u);
+                    setAssignData(prev => ({
+                      ...prev,
+                      facultyCoordinator: cleanName,
+                      coordinatorUserId: u.id,
+                    }));
+                  }
+                }
+              }}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs focus:outline-none"
+            >
+              <option value="">-- Choose Available Unassigned Staff Member --</option>
+              {availableStaffUsers.map((u) => (
+                <option key={u.id} value={u.email}>
+                  {extractOnlyName(u)} ({u.email})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -651,6 +947,55 @@ const FacultyCommunityDetailPage = () => {
           </div>
         </form>
       </Modal>
+
+      {movingMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200 text-slate-800">
+            <h3 className="text-lg font-extrabold text-slate-900">Move Student</h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Select the target community where you want to move <strong>{movingMember.studentName}</strong>.
+            </p>
+
+            <div className="mt-4 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Community</label>
+                <select
+                  value={targetCommunityId}
+                  onChange={(e) => setTargetCommunityId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#8b5cf6]"
+                >
+                  <option value="">-- Choose Community --</option>
+                  {allCommunities
+                    .filter((c) => c.id !== community.id)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMovingMember(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteMove}
+                  disabled={!targetCommunityId}
+                  className="px-4 py-2 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-xs font-bold transition disabled:opacity-50"
+                >
+                  Move Student
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

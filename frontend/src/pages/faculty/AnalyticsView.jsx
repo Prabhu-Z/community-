@@ -3,7 +3,7 @@ import api from '../../services/api';
 import ChartCard from '../../components/common/ChartCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { Users, Building2, Calendar, CheckSquare, Search, Sparkles, Activity, Download, Info } from 'lucide-react';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, AreaChart, Area } from 'recharts';
 
 const AnalyticsView = () => {
   const [allCommunities, setAllCommunities] = useState([]);
@@ -157,6 +157,34 @@ const AnalyticsView = () => {
         </div>
       </div>
 
+      {/* Global cross-community membership sizing */}
+      <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 lg:p-8 space-y-4">
+        <div>
+          <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+            <Users className="w-5 h-5 text-[#7c3aed]" /> Active Student Memberships Across Communities
+          </h3>
+          <p className="text-xs text-slate-500">Live enrolled student counts sorted by size across all active campus clubs and chapters.</p>
+        </div>
+        <ResponsiveContainer width="100%" height={260}>
+          <AreaChart data={allCommunities.map(c => ({ name: c.name, Members: c.memberCount })).sort((a,b) => b.Members - a.Members)}>
+            <defs>
+              <linearGradient id="colorMembers" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4}/>
+                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} interval={0} angle={-35} textAnchor="end" height={80} />
+            <YAxis stroke="#94a3b8" fontSize={10} />
+            <Tooltip 
+              contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+              itemStyle={{ color: '#8b5cf6', fontWeight: 'bold' }}
+            />
+            <Area type="monotone" dataKey="Members" stroke="#8b5cf6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorMembers)" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
       {/* REAL DATA CHARTS FOR SELECTED COMMUNITY */}
       {loadingAnalytics ? (
         <div className="p-12 text-center text-xs text-slate-600">
@@ -299,6 +327,54 @@ const AnalyticsView = () => {
                       labelStyle={{ color: '#7c3aed', fontWeight: 'bold', fontSize: '12px' }}
                     />
                     <Bar dataKey="value" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            {/* CHART 4: Event Attendance Conversion (Registered vs Attended) */}
+            <ChartCard title="Event Attendance Conversion" subtitle="Registrations vs verified attendance (Present) across community events">
+              {!analytics.eventAttendanceChartData || analytics.eventAttendanceChartData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-6 text-center text-xs text-slate-500 space-y-2 font-medium">
+                  <Info className="w-8 h-8 text-[#8b5cf6]" />
+                  <div>No event attendance data tracked yet for this community.</div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={analytics.eventAttendanceChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                    <YAxis stroke="#64748b" fontSize={10} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                      itemStyle={{ fontSize: '12px' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <Bar dataKey="registered" name="Registered" fill="#38bdf8" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="attended" name="Attended" fill="#34d399" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </ChartCard>
+
+            {/* CHART 5: Leaderboard Points Distribution by Department */}
+            <ChartCard title="Leaderboard Points by Department" subtitle="Average leaderboard points earned per student by department">
+              {!analytics.departmentPointsChartData || analytics.departmentPointsChartData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-6 text-center text-xs text-slate-500 space-y-2 font-medium">
+                  <Info className="w-8 h-8 text-[#8b5cf6]" />
+                  <div>No department points data found. Assign some points to members first.</div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={analytics.departmentPointsChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                    <YAxis stroke="#64748b" fontSize={10} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                      itemStyle={{ fontSize: '12px' }}
+                    />
+                    <Bar dataKey="value" name="Avg Points" fill="#f59e0b" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}

@@ -81,6 +81,12 @@ public class StudentService {
         student.setDegree(dto.getDegree());
         student.setYear(dto.getYear());
         student.setSemester(dto.getSemester());
+        student.setLeetcode(dto.getLeetcode());
+        student.setGithub(dto.getGithub());
+        student.setHackerrank(dto.getHackerrank());
+        student.setLinkedin(dto.getLinkedin());
+        student.setCodechef(dto.getCodechef());
+        student.setCustomLinks(dto.getCustomLinks());
 
         Student updated = studentRepository.save(student);
         return mapToDTO(updated);
@@ -136,6 +142,21 @@ public class StudentService {
         double volunteerHoursSum = volunteerHourRepository.findByStudentId(s.getId()).stream()
                 .mapToDouble(vh -> vh.getHours() != null ? vh.getHours() : 0.0).sum();
 
+        List<MembershipDTO> mems = membershipRepository.findByStudentId(s.getId()).stream()
+                .map(m -> MembershipDTO.builder()
+                        .id(m.getId())
+                        .studentId(m.getStudent().getId())
+                        .studentName(m.getStudent().getName())
+                        .studentCode(m.getStudent().getStudentCode())
+                        .department(m.getStudent().getDepartment())
+                        .communityId(m.getCommunity().getId())
+                        .communityName(m.getCommunity().getName())
+                        .communityCategory(m.getCommunity().getCategory())
+                        .role(m.getRole())
+                        .status(m.getStatus())
+                        .build())
+                .collect(Collectors.toList());
+
         return StudentDTO.builder()
                 .id(s.getId())
                 .userId(s.getUser() != null ? s.getUser().getId() : null)
@@ -152,6 +173,13 @@ public class StudentService {
                 .totalEventsAttended(eventsRegCount)
                 .totalVolunteerHours(volunteerHoursSum)
                 .attendancePercentage(92.0)
+                .memberships(mems)
+                .leetcode(s.getLeetcode())
+                .github(s.getGithub())
+                .hackerrank(s.getHackerrank())
+                .linkedin(s.getLinkedin())
+                .codechef(s.getCodechef())
+                .customLinks(s.getCustomLinks())
                 .build();
     }
 }

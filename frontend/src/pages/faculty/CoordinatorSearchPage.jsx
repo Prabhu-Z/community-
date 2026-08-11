@@ -3,7 +3,7 @@ import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
-import { Search, UserCheck, ShieldCheck, Mail, Building2, Calendar, KeyRound, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Search, UserCheck, ShieldCheck, Mail, Building2, Calendar, KeyRound, CheckCircle2, RefreshCw, Upload, FileSpreadsheet, Download } from 'lucide-react';
 
 const CoordinatorSearchPage = () => {
   const [coordinators, setCoordinators] = useState([]);
@@ -18,6 +18,12 @@ const CoordinatorSearchPage = () => {
   const [assignCommunityId, setAssignCommunityId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Bulk Import State
+  const [importModal, setImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -133,6 +139,49 @@ const CoordinatorSearchPage = () => {
     }
   };
 
+  const handleBulkImportSubmit = async (e) => {
+    e.preventDefault();
+    if (!importFile) return;
+
+    setImporting(true);
+    setImportResult(null);
+
+    const formData = new FormData();
+    formData.append('file', importFile);
+
+    try {
+      const res = await api.post('/users/bulk-import-faculty', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setImportResult(res.data);
+      fetchData();
+      setImportFile(null);
+    } catch (err) {
+      console.error('Error importing faculty:', err);
+      alert(err.response?.data?.message || 'Failed to bulk import faculty.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleDownloadCsvTemplate = () => {
+    const csvRows = [
+      ['faculty reg number', 'name', 'mail id', 'department'],
+      ['FAC001', 'Dr. John Doe', 'john.doe@college.edu', 'Computer Science'],
+      ['FAC002', 'Prof. Sarah Jenkins', 'sarah.j@college.edu', 'Information Technology']
+    ];
+    const csvContent = csvRows.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'faculty_bulk_import_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) return <LoadingSpinner label="Loading staff & community coordinators directory..." />;
 
   const filteredCoordinators = coordinators.filter((user) => {
@@ -182,6 +231,14 @@ const CoordinatorSearchPage = () => {
             <option value="ROLE_COMMUNITY_COORDINATOR" className="bg-white text-slate-900">Faculty Coordinators</option>
             <option value="ROLE_FACULTY" className="bg-white text-slate-900">Admin Leads</option>
           </select>
+          
+          {/* Bulk Import Button */}
+          <button
+            onClick={() => setImportModal(true)}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#8b5cf6] text-white hover:bg-[#7c3aed] text-xs font-extrabold flex items-center justify-center gap-2 shadow transition active:scale-95 shrink-0"
+          >
+            <Upload className="w-4 h-4 text-white" /> Bulk Import Faculty
+          </button>
         </div>
       </div>
 
@@ -227,6 +284,18 @@ const CoordinatorSearchPage = () => {
                     <Mail className="w-4 h-4 text-slate-600 shrink-0" />
                     <span className="font-mono text-[11px] truncate">{u.email}</span>
                   </div>
+                  {u.facultyRegNumber && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-500 uppercase tracking-widest font-extrabold">Reg No:</span>
+                      <strong className="text-slate-800 font-mono">{u.facultyRegNumber}</strong>
+                    </div>
+                  )}
+                  {u.department && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-500 uppercase tracking-widest font-extrabold">Dept:</span>
+                      <strong className="text-slate-800">{u.department}</strong>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -318,6 +387,100 @@ const CoordinatorSearchPage = () => {
             </div>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal: Bulk Import Faculty */}
+      <Modal
+        isOpen={importModal}
+        onClose={() => {
+          setImportModal(false);
+          setImportResult(null);
+          setImportFile(null);
+        }}
+        title="Bulk Import Faculty Coordinators"
+      >
+        <div className="space-y-5 text-xs">
+          <div className="p-3.5 rounded-xl bg-white/5 border border-slate-200 text-xs text-[#7c3aed]">
+            Bulk import registered faculty advisors from a spreadsheet. The system will automatically check if the email address is registered. If unregistered, it will create a new faculty user account with password <strong>password123</strong>. Existing accounts will be upgraded/promoted to the faculty coordinator role.
+          </div>
+
+          {/* Sample CSV Template Download Widget */}
+          <div className="p-4 rounded-2xl bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                <FileSpreadsheet className="w-4 h-4 text-[#7c3aed]" /> Faculty Excel/CSV Template
+              </div>
+              <p className="text-[11px] text-slate-600">
+                Required headers in first row: <code>faculty reg number</code>, <code>name</code>, <code>mail id</code>, <code>department</code>.
+              </p>
+            </div>
+            <button
+              onClick={handleDownloadCsvTemplate}
+              className="px-3.5 py-2 rounded-xl bg-[#8b5cf6] text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md hover:bg-[#7c3aed] transition shrink-0 self-start sm:self-auto"
+            >
+              <Download className="w-4 h-4 text-white" /> Get CSV Template
+            </button>
+          </div>
+
+          {/* Upload Form */}
+          <form onSubmit={handleBulkImportSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Select Spreadsheet File (.xlsx, .xls, .csv) *</label>
+              <input
+                type="file"
+                required
+                accept=".xlsx, .xls, .csv"
+                onChange={(e) => setImportFile(e.target.files[0] || null)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#8b5cf6] file:text-white hover:file:bg-[#7c3aed] cursor-pointer font-mono"
+              />
+            </div>
+
+            {/* Results / Feedback Message */}
+            {importResult && (
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-2">
+                <div className="font-bold text-emerald-905 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  {importResult.message}
+                </div>
+                {importResult.warnings && importResult.warnings.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <div className="font-semibold text-amber-700">Warnings / Skipped rows:</div>
+                    <ul className="list-disc pl-4 text-amber-600/90 max-h-24 overflow-y-auto font-mono text-[10px]">
+                      {importResult.warnings.map((w, idx) => (
+                        <li key={idx}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setImportModal(false);
+                  setImportResult(null);
+                  setImportFile(null);
+                }}
+                className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 text-xs font-bold"
+              >
+                Close
+              </button>
+              <button
+                type="submit"
+                disabled={importing || !importFile}
+                className="px-5 py-2.5 rounded-xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold transition shadow-sm text-xs flex items-center gap-2 disabled:opacity-50"
+              >
+                <Upload className="w-4 h-4 text-white" />
+                {importing ? 'Processing & Registering...' : 'Start Faculty Import'}
+              </button>
+            </div>
+          </form>
+
+          {/* Importing Spinner */}
+          {importing && <LoadingSpinner label="Parsing spreadsheet, registering faculty accounts & setting roles..." />}
+        </div>
       </Modal>
     </div>
   );

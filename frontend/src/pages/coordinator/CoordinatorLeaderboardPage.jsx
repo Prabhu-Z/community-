@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { Trophy, Award, Medal, Crown, Star, Users, ShieldCheck, Building2 } from 'lucide-react';
+import { Trophy, Award, Medal, Crown, Star, Users, ShieldCheck, Building2, Eye } from 'lucide-react';
 
 const CoordinatorLeaderboardPage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [community, setCommunity] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -169,7 +171,16 @@ const CoordinatorLeaderboardPage = () => {
                 {leaderboard.map((st) => (
                   <tr key={st.studentId} className="hover:bg-slate-50 transition">
                     <td className="py-3.5 px-4 font-mono font-bold text-sm text-slate-900">#{st.rank}</td>
-                    <td className="py-3.5 px-4 font-extrabold text-slate-900">{st.studentName}</td>
+                    <td className="py-3.5 px-4 font-extrabold text-slate-900 flex items-center gap-2">
+                      <button
+                        onClick={() => navigate(`/faculty/students/${st.studentId}`)}
+                        className="p-1 rounded-lg hover:bg-purple-100 text-[#7c3aed] transition"
+                        title="View Student Portfolio Dashboard"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      {st.studentName}
+                    </td>
                     <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500 font-semibold">{st.studentCode}</td>
                     <td className="py-3.5 px-4 text-slate-700">{st.department}</td>
                     <td className="py-3.5 px-4 text-right font-mono font-bold text-[#7c3aed] text-sm">

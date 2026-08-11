@@ -23,6 +23,13 @@ public class StudentDTO {
     private Integer totalAchievements;
     private Integer totalCertificates;
 
+    private String leetcode;
+    private String github;
+    private String hackerrank;
+    private String linkedin;
+    private String codechef;
+    private String customLinks;
+
     private List<MembershipDTO> memberships;
     private List<ActivityDTO> activities;
     private List<AchievementDTO> achievements;
@@ -102,6 +109,19 @@ public class StudentDTO {
 
     public static StudentDTOBuilder builder() { return new StudentDTOBuilder(); }
 
+    public String getLeetcode() { return leetcode; }
+    public void setLeetcode(String leetcode) { this.leetcode = leetcode; }
+    public String getGithub() { return github; }
+    public void setGithub(String github) { this.github = github; }
+    public String getHackerrank() { return hackerrank; }
+    public void setHackerrank(String hackerrank) { this.hackerrank = hackerrank; }
+    public String getLinkedin() { return linkedin; }
+    public void setLinkedin(String linkedin) { this.linkedin = linkedin; }
+    public String getCodechef() { return codechef; }
+    public void setCodechef(String codechef) { this.codechef = codechef; }
+    public String getCustomLinks() { return customLinks; }
+    public void setCustomLinks(String customLinks) { this.customLinks = customLinks; }
+
     public static class StudentDTOBuilder {
         private Long id;
         private Long userId;
@@ -121,6 +141,12 @@ public class StudentDTO {
         private Double totalVolunteerHours;
         private Integer totalAchievements;
         private Integer totalCertificates;
+        private String leetcode;
+        private String github;
+        private String hackerrank;
+        private String linkedin;
+        private String codechef;
+        private String customLinks;
         private List<MembershipDTO> memberships;
         private List<ActivityDTO> activities;
         private List<AchievementDTO> achievements;
@@ -144,13 +170,26 @@ public class StudentDTO {
         public StudentDTOBuilder totalVolunteerHours(Double totalVolunteerHours) { this.totalVolunteerHours = totalVolunteerHours; return this; }
         public StudentDTOBuilder totalAchievements(Integer totalAchievements) { this.totalAchievements = totalAchievements; return this; }
         public StudentDTOBuilder totalCertificates(Integer totalCertificates) { this.totalCertificates = totalCertificates; return this; }
+        public StudentDTOBuilder leetcode(String leetcode) { this.leetcode = leetcode; return this; }
+        public StudentDTOBuilder github(String github) { this.github = github; return this; }
+        public StudentDTOBuilder hackerrank(String hackerrank) { this.hackerrank = hackerrank; return this; }
+        public StudentDTOBuilder linkedin(String linkedin) { this.linkedin = linkedin; return this; }
+        public StudentDTOBuilder codechef(String codechef) { this.codechef = codechef; return this; }
+        public StudentDTOBuilder customLinks(String customLinks) { this.customLinks = customLinks; return this; }
         public StudentDTOBuilder memberships(List<MembershipDTO> memberships) { this.memberships = memberships; return this; }
         public StudentDTOBuilder activities(List<ActivityDTO> activities) { this.activities = activities; return this; }
         public StudentDTOBuilder achievements(List<AchievementDTO> achievements) { this.achievements = achievements; return this; }
         public StudentDTOBuilder certificates(List<CertificateDTO> certificates) { this.certificates = certificates; return this; }
 
         public StudentDTO build() {
-            return new StudentDTO(id, userId, studentCode, name, email, department, degree, year, semester, contact, profileImage, totalCommunitiesJoined, totalEventsRegistered, totalEventsAttended, attendancePercentage, totalVolunteerHours, totalAchievements, totalCertificates, memberships, activities, achievements, certificates);
+            StudentDTO dto = new StudentDTO(id, userId, studentCode, name, email, department, degree, year, semester, contact, profileImage, totalCommunitiesJoined, totalEventsRegistered, totalEventsAttended, attendancePercentage, totalVolunteerHours, totalAchievements, totalCertificates, memberships, activities, achievements, certificates);
+            dto.setLeetcode(leetcode);
+            dto.setGithub(github);
+            dto.setHackerrank(hackerrank);
+            dto.setLinkedin(linkedin);
+            dto.setCodechef(codechef);
+            dto.setCustomLinks(customLinks);
+            return dto;
         }
     }
 }

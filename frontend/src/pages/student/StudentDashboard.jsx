@@ -8,6 +8,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import PrintReportModal from '../../components/reports/PrintReportModal';
 import PortfolioExportModal from '../../components/common/PortfolioExportModal';
+import StudentHeatStreak from '../../components/common/StudentHeatStreak';
 import { Users, Calendar, CheckCircle2, Award, Printer, ShieldCheck, FileDown } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
@@ -26,6 +27,7 @@ const StudentDashboard = () => {
   const [reportModal, setReportModal] = useState(false);
   const [portfolioModal, setPortfolioModal] = useState(false);
   const [reportData, setReportData] = useState(null);
+  const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
     if (!user) return;
@@ -33,6 +35,13 @@ const StudentDashboard = () => {
       try {
         const res = await api.get(`/dashboards/student/user/${user.id}`);
         setData(res.data);
+
+        // Fetch student's tasks for the heat streak matrix
+        const studentIdParam = res.data.student?.id || user?.studentId || user?.id;
+        if (studentIdParam) {
+          const taskRes = await api.get(`/tasks/student/${studentIdParam}`).catch(() => ({ data: [] }));
+          setTasks(taskRes.data || []);
+        }
       } catch (err) {
         console.error('Error loading dashboard:', err);
       } finally {
@@ -127,6 +136,9 @@ const StudentDashboard = () => {
           color="chestnut"
         />
       </div>
+
+      {/* LEETCODE-STYLE HEATSTREAK MATRIX COMPONENT */}
+      <StudentHeatStreak studentId={data.student?.id} tasks={tasks} />
 
       {/* Analytics Charts & Upcoming Events Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

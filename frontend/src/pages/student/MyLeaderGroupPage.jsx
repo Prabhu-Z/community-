@@ -5,7 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
-import { Users, Plus, Minus, Crown, ShieldCheck, GraduationCap, UserMinus, Trash2, Edit3, Sparkles, AlertCircle, Building2 } from 'lucide-react';
+import GroupChat from '../../components/common/GroupChat';
+import { Users, Plus, Minus, Crown, ShieldCheck, GraduationCap, UserMinus, Trash2, Edit3, Sparkles, AlertCircle, Building2, Check, X } from 'lucide-react';
 
 const MyLeaderGroupPage = () => {
   const { user } = useAuth();
@@ -159,6 +160,36 @@ const MyLeaderGroupPage = () => {
     }
   };
 
+  const handleApproveMember = async (studentId, studentName) => {
+    if (!activeGroup) return;
+    try {
+      setLoading(true);
+      await api.post(`/community-groups/${activeGroup.id}/approve-member?studentId=${studentId}`);
+      alert(`🎉 Approved ${studentName} successfully!`);
+      fetchInitialData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to approve member.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeclineMember = async (studentId, studentName) => {
+    if (!activeGroup) return;
+    const confirm = window.confirm(`Decline join request from ${studentName}?`);
+    if (!confirm) return;
+    try {
+      setLoading(true);
+      await api.post(`/community-groups/${activeGroup.id}/leave?studentId=${studentId}`);
+      alert(`Declined join request from ${studentName}.`);
+      fetchInitialData();
+    } catch (err) {
+      alert('Failed to decline request.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) return <LoadingSpinner label="Loading your leader group workspace..." />;
 
   if (!isStudentLeader) {
@@ -283,31 +314,16 @@ const MyLeaderGroupPage = () => {
                 </p>
               </div>
 
-              {/* DYNAMIC TEAM SIZE ADJUSTER CONTROL */}
+              {/* TEAM SIZE CAPACITY (ReadOnly for Student Leaders) */}
               <div className="bg-purple-50/70 p-4 rounded-2xl border border-purple-100 text-center space-y-2">
-                <span className="text-[10px] font-mono text-slate-600 uppercase font-bold">Dynamic Team Size Capacity</span>
+                <span className="text-[10px] font-mono text-slate-600 uppercase font-bold">Team Size Capacity</span>
                 <div className="flex items-center justify-center gap-3">
-                  <button
-                    onClick={() => handleAdjustTeamSize(-1)}
-                    disabled={activeGroup.maxTeamSize <= activeGroup.currentMemberCount}
-                    className="w-8 h-8 rounded-lg bg-white text-slate-800 border border-slate-300 font-bold hover:bg-slate-100 disabled:opacity-40 transition flex items-center justify-center shadow-sm"
-                    title="Decrease max capacity"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
                   <span className="text-xl font-bold font-mono text-[#7c3aed] px-2">
                     {activeGroup.currentMemberCount} / {activeGroup.maxTeamSize}
                   </span>
-                  <button
-                    onClick={() => handleAdjustTeamSize(1)}
-                    className="w-8 h-8 rounded-lg bg-[#8b5cf6] text-white font-bold hover:bg-[#7c3aed] transition flex items-center justify-center shadow-sm"
-                    title="Increase max capacity"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
                 </div>
                 <div className="text-[10px] text-slate-500 font-medium">
-                  Click + or - to dynamically adjust max slots
+                  Only the Faculty Coordinator can modify team capacity.
                 </div>
               </div>
             </div>
@@ -325,74 +341,118 @@ const MyLeaderGroupPage = () => {
                   </div>
                 </div>
               </div>
-
-              <button
-                onClick={handleDeleteGroup}
-                className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold transition flex items-center gap-1.5 self-start sm:self-auto"
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Disassemble Group
-              </button>
             </div>
 
-            {/* TEAM ROSTER LIST */}
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-[#8b5cf6]" /> Joined Team Members ({activeGroup.members?.length || 0})
-                </h3>
-                <span className="text-xs font-mono text-[#7c3aed] font-bold">
-                  {activeGroup.maxTeamSize - activeGroup.currentMemberCount} Open Slots Remaining
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {activeGroup.members && activeGroup.members.length > 0 ? (
-                  activeGroup.members.map((m) => {
-                    const isLeader = m.role === 'LEADER' || m.studentId === activeGroup.leaderStudentId;
-                    return (
-                      <div
-                        key={m.id}
-                        className={`bg-white p-4 rounded-xl border space-y-2 flex flex-col justify-between shadow-sm ${
-                          isLeader ? 'border-purple-300 bg-purple-50/50' : 'border-slate-200'
-                        }`}
-                      >
+            {/* PENDING JOIN REQUESTS SECTION */}
+            {(() => {
+              const pendingRequests = (activeGroup.members || []).filter(m => m.role === 'PENDING');
+              if (pendingRequests.length === 0) return null;
+              return (
+                <div className="space-y-4 pt-2 bg-purple-50/20 p-6 rounded-3xl border border-purple-100 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#8b5cf6]" /> Pending Group Join Requests ({pendingRequests.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {pendingRequests.map((m) => (
+                      <div key={m.id} className="bg-white p-4 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between shadow-sm">
                         <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-extrabold text-slate-900 text-sm flex items-center gap-1">
-                              {isLeader && <Crown className="w-4 h-4 text-[#8b5cf6]" />} {m.studentName}
-                            </span>
-                            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                              isLeader ? 'bg-[#8b5cf6] text-white' : 'bg-slate-100 text-slate-700'
-                            }`}>
-                              {isLeader ? 'LEADER' : 'MEMBER'}
-                            </span>
-                          </div>
+                          <div className="font-extrabold text-slate-900 text-sm">{m.studentName}</div>
                           <div className="text-xs font-mono text-[#7c3aed] font-bold">Reg #{m.studentCode}</div>
                           <div className="text-[11px] text-slate-600 flex items-center gap-1 font-medium">
                             <GraduationCap className="w-3.5 h-3.5 text-[#8b5cf6]" /> {m.department}
                           </div>
                         </div>
-
-                        {!isLeader && (
-                          <div className="pt-2 border-t border-slate-100">
-                            <button
-                              onClick={() => handleRemoveMember(m.studentId, m.studentName)}
-                              className="w-full py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold transition flex items-center justify-center gap-1"
-                            >
-                              <UserMinus className="w-3.5 h-3.5" /> Remove Member
-                            </button>
-                          </div>
-                        )}
+                        <div className="pt-3 border-t border-slate-100 flex gap-2">
+                          <button
+                            onClick={() => handleDeclineMember(m.studentId, m.studentName)}
+                            className="flex-1 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                          >
+                            <X className="w-3.5 h-3.5" /> Decline
+                          </button>
+                          <button
+                            onClick={() => handleApproveMember(m.studentId, m.studentName)}
+                            className="flex-1 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                          >
+                            <Check className="w-3.5 h-3.5" /> Approve
+                          </button>
+                        </div>
                       </div>
-                    );
-                  })
-                ) : (
-                  <div className="col-span-full p-8 text-center text-xs text-slate-500 font-medium">
-                    No members have joined your team yet. Share your group with members in Group Openings!
+                    ))}
                   </div>
-                )}
+                </div>
+              );
+            })()}
+
+            {/* TEAM ROSTER LIST */}
+            {(() => {
+              const allMembers = activeGroup.members || [];
+              const leaderInfo = allMembers.find(m => m.role === 'LEADER' || m.studentId === activeGroup.leaderStudentId);
+              const joinedMembers = allMembers.filter(m => m.role === 'MEMBER');
+              const displayMembers = [...(leaderInfo ? [leaderInfo] : []), ...joinedMembers];
+
+              return (
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-[#8b5cf6]" /> Joined Team Members ({displayMembers.length})
+                    </h3>
+                    <span className="text-xs font-mono text-[#7c3aed] font-bold">
+                      {activeGroup.maxTeamSize - activeGroup.currentMemberCount} Open Slots Remaining
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {displayMembers.length > 0 ? (
+                      displayMembers.map((m) => {
+                        const isLeader = m.role === 'LEADER' || m.studentId === activeGroup.leaderStudentId;
+                        return (
+                          <div
+                            key={m.id}
+                            className={`bg-white p-4 rounded-xl border space-y-2 flex flex-col justify-between shadow-sm ${
+                              isLeader ? 'border-purple-300 bg-purple-50/50' : 'border-slate-200'
+                            }`}
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="font-extrabold text-slate-900 text-sm flex items-center gap-1">
+                                  {isLeader && <Crown className="w-4 h-4 text-[#8b5cf6]" />} {m.studentName}
+                                </span>
+                                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                                  isLeader ? 'bg-[#8b5cf6] text-white' : 'bg-slate-100 text-slate-700'
+                                }`}>
+                                  {isLeader ? 'LEADER' : 'MEMBER'}
+                                </span>
+                              </div>
+                              <div className="text-xs font-mono text-[#7c3aed] font-bold">Reg #{m.studentCode}</div>
+                              <div className="text-[11px] text-slate-600 flex items-center gap-1 font-medium">
+                                <GraduationCap className="w-3.5 h-3.5 text-[#8b5cf6]" /> {m.department}
+                              </div>
+                            </div>
+
+
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="col-span-full p-8 text-center text-xs text-slate-500 font-medium">
+                        No members have joined your team yet. Share your group with members in Group Openings!
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Team Chat Collaboration Box */}
+            {activeGroup.approvalStatus === 'APPROVED' && (
+              <div className="pt-6 border-t border-slate-100">
+                <GroupChat
+                  groupId={activeGroup.id}
+                  senderName={student?.name || user?.name || 'Leader'}
+                  senderRole="LEADER"
+                />
               </div>
-            </div>
+            )}
           </div>
         </div>
       ) : (

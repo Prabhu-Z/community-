@@ -41,6 +41,24 @@ public class Student {
     @Column(name = "points")
     private Integer points = 0;
 
+    @Column(name = "leetcode")
+    private String leetcode;
+
+    @Column(name = "github")
+    private String github;
+
+    @Column(name = "hackerrank")
+    private String hackerrank;
+
+    @Column(name = "linkedin")
+    private String linkedin;
+
+    @Column(name = "codechef")
+    private String codechef;
+
+    @Column(name = "custom_links", columnDefinition = "TEXT")
+    private String customLinks;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -87,6 +105,18 @@ public class Student {
     public void setProfileImage(String profileImage) { this.profileImage = profileImage; }
     public Integer getPoints() { return points != null ? points : 0; }
     public void setPoints(Integer points) { this.points = points; }
+    public String getLeetcode() { return leetcode; }
+    public void setLeetcode(String leetcode) { this.leetcode = leetcode; }
+    public String getGithub() { return github; }
+    public void setGithub(String github) { this.github = github; }
+    public String getHackerrank() { return hackerrank; }
+    public void setHackerrank(String hackerrank) { this.hackerrank = hackerrank; }
+    public String getLinkedin() { return linkedin; }
+    public void setLinkedin(String linkedin) { this.linkedin = linkedin; }
+    public String getCodechef() { return codechef; }
+    public void setCodechef(String codechef) { this.codechef = codechef; }
+    public String getCustomLinks() { return customLinks; }
+    public void setCustomLinks(String customLinks) { this.customLinks = customLinks; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
@@ -103,6 +133,12 @@ public class Student {
         private Integer semester;
         private String contact;
         private String profileImage;
+        private String leetcode;
+        private String github;
+        private String hackerrank;
+        private String linkedin;
+        private String codechef;
+        private String customLinks;
         private LocalDateTime createdAt;
 
         public StudentBuilder id(Long id) { this.id = id; return this; }
@@ -115,10 +151,23 @@ public class Student {
         public StudentBuilder semester(Integer semester) { this.semester = semester; return this; }
         public StudentBuilder contact(String contact) { this.contact = contact; return this; }
         public StudentBuilder profileImage(String profileImage) { this.profileImage = profileImage; return this; }
+        public StudentBuilder leetcode(String leetcode) { this.leetcode = leetcode; return this; }
+        public StudentBuilder github(String github) { this.github = github; return this; }
+        public StudentBuilder hackerrank(String hackerrank) { this.hackerrank = hackerrank; return this; }
+        public StudentBuilder linkedin(String linkedin) { this.linkedin = linkedin; return this; }
+        public StudentBuilder codechef(String codechef) { this.codechef = codechef; return this; }
+        public StudentBuilder customLinks(String customLinks) { this.customLinks = customLinks; return this; }
         public StudentBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
 
         public Student build() {
-            return new Student(id, user, studentCode, name, department, degree, year, semester, contact, profileImage, createdAt);
+            Student s = new Student(id, user, studentCode, name, department, degree, year, semester, contact, profileImage, createdAt);
+            s.setLeetcode(leetcode);
+            s.setGithub(github);
+            s.setHackerrank(hackerrank);
+            s.setLinkedin(linkedin);
+            s.setCodechef(codechef);
+            s.setCustomLinks(customLinks);
+            return s;
         }
     }
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import NotificationDropdown from './NotificationDropdown';
-import { LogOut, Sparkles, GraduationCap, ShieldCheck, ChevronDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { LogOut, Sparkles, GraduationCap, ShieldCheck, ChevronDown, ArrowLeft, ArrowRight, Calendar } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = ({ onToggleSidebar }) => {
@@ -105,6 +105,15 @@ const Navbar = ({ onToggleSidebar }) => {
       <div className="flex items-center gap-3 md:gap-5">
         {user ? (
           <>
+            {user.role === 'ROLE_STUDENT' && (
+              <button
+                onClick={() => navigate('/student/calendar')}
+                className="p-2.5 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition flex items-center justify-center"
+                title="View Campus Calendar"
+              >
+                <Calendar className="w-5 h-5" />
+              </button>
+            )}
             <NotificationDropdown />
 
             <div className="flex items-center gap-3 pl-3 border-l border-slate-200">

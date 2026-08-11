@@ -20,23 +20,14 @@ const StudentLeaderboardPage = () => {
   const fetchUserCommunities = async () => {
     try {
       let studentIdParam = user?.studentId || user?.id;
-      const [memRes, commRes] = await Promise.all([
-        api.get(`/memberships/student/${studentIdParam}`).catch(() => ({ data: [] })),
-        api.get('/communities').catch(() => ({ data: [] }))
-      ]);
+      const memRes = await api.get(`/memberships/student/${studentIdParam}`).catch(() => ({ data: [] }));
 
       const myMems = (memRes.data || []).filter(m => m.status === 'APPROVED');
-      const allComms = commRes.data || [];
 
-      // Combine user joined communities and all available communities
+      // Only list enrolled and approved communities
       const commOptions = [];
       myMems.forEach(m => {
         commOptions.push({ communityId: m.communityId, communityName: m.communityName || 'Community' });
-      });
-      allComms.forEach(ac => {
-        if (!commOptions.some(co => co.communityId === ac.id)) {
-          commOptions.push({ communityId: ac.id, communityName: ac.name });
-        }
       });
 
       setCommunities(commOptions);
@@ -45,11 +36,12 @@ const StudentLeaderboardPage = () => {
         setSelectedCommunity(commOptions[0]);
         loadLeaderboard(commOptions[0].communityId);
       } else {
-        loadLeaderboard('ALL');
+        setLeaderboard([]);
+        setLoading(false);
       }
     } catch (err) {
       console.error('Error fetching user communities for leaderboard:', err);
-      loadLeaderboard('ALL');
+      setLoading(false);
     }
   };
 

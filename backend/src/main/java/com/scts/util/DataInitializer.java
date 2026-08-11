@@ -29,6 +29,9 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
+    private jakarta.persistence.EntityManager entityManager;
+
+    @Autowired
     public DataInitializer(UserRepository userRepository, StudentRepository studentRepository, CommunityRepository communityRepository, MembershipRepository membershipRepository, EventRepository eventRepository, EventRegistrationRepository registrationRepository, AttendanceRepository attendanceRepository, ActivityRepository activityRepository, VolunteerHourRepository volunteerHourRepository, AchievementRepository achievementRepository, CertificateRepository certificateRepository, AnnouncementRepository announcementRepository, NotificationRepository notificationRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
@@ -47,8 +50,46 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void run(String... args) {
         try {
+            try {
+                org.hibernate.Session session = entityManager.unwrap(org.hibernate.Session.class);
+                session.doWork(connection -> {
+                    java.sql.DatabaseMetaData metaData = connection.getMetaData();
+                    try (java.sql.ResultSet rs = metaData.getColumns(null, null, "users", "faculty_reg_number")) {
+                        if (!rs.next()) {
+                            try (java.sql.Statement stmt = connection.createStatement()) {
+                                stmt.executeUpdate("ALTER TABLE users ADD COLUMN faculty_reg_number VARCHAR(100) DEFAULT NULL");
+                                stmt.executeUpdate("ALTER TABLE users ADD COLUMN name VARCHAR(255) DEFAULT NULL");
+                                stmt.executeUpdate("ALTER TABLE users ADD COLUMN department VARCHAR(255) DEFAULT NULL");
+                            }
+                        }
+                    }
+                    try (java.sql.Statement stmt = connection.createStatement()) {
+                        stmt.executeUpdate("ALTER TABLE community_groups MODIFY COLUMN leader_student_id BIGINT NULL");
+                    } catch (Exception ignored) {}
+                });
+            } catch (Exception e) {
+                System.out.println("Metadata migration exception: " + e.getMessage());
+            }
+
+            // Remove legacy Dr. Rajeshwar / Dr. Rajeshwari coordinators from all database rows
+            communityRepository.findAll().forEach(c -> {
+                if (c.getFacultyCoordinator() != null && 
+                    (c.getFacultyCoordinator().toLowerCase().contains("rajeshwar") || 
+                     c.getFacultyCoordinator().toLowerCase().contains("rajeshwari"))) {
+                    c.setFacultyCoordinator(null);
+                    communityRepository.save(c);
+                }
+            });
+
+            membershipRepository.findByStatus(MembershipStatus.REJECTED).forEach(m -> {
+                try {
+                    membershipRepository.delete(m);
+                } catch (Exception ignored) {}
+            });
+
             if (userRepository.count() > 0) {
                 return;
             }
@@ -116,7 +157,7 @@ public class DataInitializer implements CommandLineRunner {
                         .name(names[i])
                         .description("Official student organization dedicated to promoting excellence in " + names[i] + ".")
                         .category(categories[i])
-                        .facultyCoordinator("Dr. Rajeshwar Rao")
+                        .facultyCoordinator(null)
                         .studentCoordinator(i == 0 ? "Arun Kumar" : "Lead Coordinator " + (i + 1))
                         .coordinatorUserId(coordinatorUser.getId())
                         .status("ACTIVE")

@@ -2,6 +2,7 @@ package com.scts.service;
 
 import com.scts.dto.CommunityDTO;
 import com.scts.entity.Community;
+import com.scts.entity.MembershipStatus;
 import com.scts.exception.ResourceNotFoundException;
 import com.scts.repository.CommunityRepository;
 import com.scts.repository.EventRepository;
@@ -89,8 +90,28 @@ public class CommunityService {
         return mapToDTO(updated);
     }
 
+    @Transactional
+    public void deleteCommunity(Long id) {
+        Community community = communityRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Community", "id", id));
+
+        communityRepository.deleteRegistrationsByCommunityId(id);
+        communityRepository.deleteAttendanceByCommunityId(id);
+        communityRepository.deleteEventsByCommunityId(id);
+        communityRepository.deleteSubmissionsByCommunityId(id);
+        communityRepository.deleteAssignmentsByCommunityId(id);
+        communityRepository.deleteMembershipsByCommunityId(id);
+        communityRepository.deleteActivityRequestsByCommunityId(id);
+        communityRepository.deleteAnnouncementsByCommunityId(id);
+        communityRepository.deleteResourcesByCommunityId(id);
+
+        communityRepository.delete(community);
+    }
+
     private CommunityDTO mapToDTO(Community c) {
-        long memberCount = membershipRepository.countActiveMembersByCommunityId(c.getId());
+        long approvedCount = membershipRepository.countByCommunityIdAndStatus(c.getId(), MembershipStatus.APPROVED);
+        long activeCount = membershipRepository.countByCommunityIdAndStatus(c.getId(), MembershipStatus.ACTIVE);
+        long memberCount = approvedCount + activeCount;
         int upcomingEventCount = eventRepository.findUpcomingEventsByCommunityId(c.getId()).size();
 
         return CommunityDTO.builder()

@@ -36,24 +36,14 @@ const QRCodeTicketModal = ({ isOpen, onClose, event, student }) => {
             <p className="text-xs text-slate-600 font-mono mt-0.5 print:text-black/80">{event.communityName || 'Campus Community Event'}</p>
           </div>
 
-          {/* SVG QR Code Simulation */}
+          {/* Real QR Code Ticket */}
           <div className="flex justify-center my-4">
             <div className="p-4 rounded-2xl bg-white border-2 border-[#8b5cf6] shadow-xl inline-block">
-              <svg className="w-40 h-40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="100" height="100" fill="white" />
-                <path d="M10 10h30v30H10zM15 15h20v20H15zM20 20h10v10H20z" fill="black" />
-                <path d="M60 10h30v30H60zM65 15h20v20H65zM70 20h10v10H70z" fill="black" />
-                <path d="M10 60h30v30H10zM15 65h20v20H15zM20 70h10v10H20z" fill="black" />
-                <rect x="45" y="10" width="10" height="10" fill="black" />
-                <rect x="45" y="30" width="10" height="10" fill="black" />
-                <rect x="10" y="45" width="10" height="10" fill="black" />
-                <rect x="30" y="45" width="10" height="10" fill="black" />
-                <rect x="60" y="45" width="30" height="10" fill="black" />
-                <rect x="45" y="60" width="10" height="30" fill="black" />
-                <rect x="65" y="65" width="10" height="10" fill="black" />
-                <rect x="80" y="65" width="10" height="10" fill="black" />
-                <rect x="65" y="80" width="25" height="10" fill="black" />
-              </svg>
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=0e0e12&data=${encodeURIComponent(`scts-attendance:${event.id}:${student?.id || student?.studentId || ''}`)}`}
+                alt="Ticket QR Code"
+                className="w-40 h-40"
+              />
             </div>
           </div>
 

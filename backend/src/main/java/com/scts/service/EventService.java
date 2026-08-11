@@ -37,18 +37,26 @@ public class EventService {
         this.notificationService = notificationService;
     }
 
+    @Transactional
     public List<EventDTO> getAllEvents() {
+        return getAllEvents(null);
+    }
+
+    @Transactional
+    public List<EventDTO> getAllEvents(Long studentId) {
         return eventRepository.findAll().stream()
-                .map(e -> mapToDTO(e, null))
+                .map(e -> mapToDTO(e, studentId))
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public List<EventDTO> getUpcomingEvents() {
         return eventRepository.findByStatus(EventStatus.UPCOMING).stream()
                 .map(e -> mapToDTO(e, null))
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public List<EventDTO> getPendingProposals(Long communityId) {
         if (communityId != null) {
             return eventRepository.findByStatus(EventStatus.PENDING_APPROVAL).stream()
@@ -120,6 +128,7 @@ public class EventService {
 
         String scope = dto.getEventScope() != null ? dto.getEventScope() : "COMMUNITY_EVENT";
 
+        String otp = String.format("%04d", new java.util.Random().nextInt(10000));
         Event event = Event.builder()
                 .community(community)
                 .title(dto.getTitle())
@@ -134,6 +143,7 @@ public class EventService {
                 .maxParticipants(dto.getMaxParticipants())
                 .status(dto.getStatus() != null ? dto.getStatus() : EventStatus.UPCOMING)
                 .coordinatorName(dto.getCoordinatorName() != null ? dto.getCoordinatorName() : community.getStudentCoordinator())
+                .otpCode(otp)
                 .build();
 
         Event saved = eventRepository.save(event);
@@ -150,6 +160,7 @@ public class EventService {
 
         String scope = dto.getEventScope() != null ? dto.getEventScope() : "COMMUNITY_EVENT";
 
+        String otp = String.format("%04d", new java.util.Random().nextInt(10000));
         Event event = Event.builder()
                 .community(community)
                 .title(dto.getTitle())
@@ -164,6 +175,7 @@ public class EventService {
                 .maxParticipants(dto.getMaxParticipants() != null ? dto.getMaxParticipants() : 100)
                 .status(EventStatus.PENDING_APPROVAL)
                 .coordinatorName(leaderStudentName != null ? "Proposed by Student Leader: " + leaderStudentName : "Student Leader Proposal")
+                .otpCode(otp)
                 .build();
 
         Event saved = eventRepository.save(event);
@@ -185,6 +197,9 @@ public class EventService {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", "id", id));
 
+        if (event.getOtpCode() == null || event.getOtpCode().isEmpty()) {
+            event.setOtpCode(String.format("%04d", new java.util.Random().nextInt(10000)));
+        }
         event.setStatus(EventStatus.UPCOMING);
         Event updated = eventRepository.save(event);
         notifyCommunityMembers(event.getCommunity(), updated);
@@ -248,6 +263,10 @@ public class EventService {
             throw new BadRequestException("Student is already registered for this event.");
         }
 
+        if (event.getRegistrationDeadline() != null && java.time.LocalDate.now().isAfter(event.getRegistrationDeadline())) {
+            throw new BadRequestException("The registration deadline for this event has passed.");
+        }
+
         if (event.getStatus() != EventStatus.UPCOMING) {
             throw new BadRequestException("Registration is closed for this event.");
         }
@@ -294,8 +313,24 @@ public class EventService {
     private EventDTO mapToDTO(Event e, Long studentId) {
         long regCount = registrationRepository.countByEventId(e.getId());
         boolean isRegistered = false;
+        String regStatus = null;
         if (studentId != null) {
-            isRegistered = registrationRepository.existsByEventIdAndStudentId(e.getId(), studentId);
+            java.util.Optional<EventRegistration> regOpt = registrationRepository.findByEventIdAndStudentId(e.getId(), studentId);
+            if (regOpt.isPresent()) {
+                isRegistered = true;
+                regStatus = regOpt.get().getStatus();
+            }
+        }
+
+        String otp = e.getOtpCode();
+        if (otp == null || otp.isEmpty()) {
+            otp = String.format("%04d", new java.util.Random().nextInt(10000));
+            e.setOtpCode(otp);
+            try {
+                eventRepository.save(e);
+            } catch (Exception ex) {
+                // Ignore read-only transaction exceptions
+            }
         }
 
         return EventDTO.builder()
@@ -317,6 +352,8 @@ public class EventService {
                 .coordinatorName(e.getCoordinatorName())
                 .proposedByName(e.getCoordinatorName())
                 .isUserRegistered(isRegistered)
+                .userRegistrationStatus(regStatus)
+                .otpCode(otp)
                 .build();
     }
 }

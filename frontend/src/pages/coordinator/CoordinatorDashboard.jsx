@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import StatCard from '../../components/common/StatCard';
@@ -6,11 +7,12 @@ import ChartCard from '../../components/common/ChartCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import PrintReportModal from '../../components/reports/PrintReportModal';
-import { Users, Calendar, CheckCircle2, Clock, Check, X, Printer, Activity, Sparkles, Info, CheckSquare, Square, Building2 } from 'lucide-react';
+import { Users, Calendar, CheckCircle2, Clock, Check, X, Printer, Activity, Sparkles, Info, CheckSquare, Square, Building2, Eye } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 
 const CoordinatorDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reportModal, setReportModal] = useState(false);
@@ -405,6 +407,13 @@ const CoordinatorDashboard = () => {
                       <td className="p-3"><Badge status={req.role}>{req.role}</Badge></td>
                       <td className="p-3 font-mono">{req.joinedDate}</td>
                       <td className="p-3 text-right flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => navigate(`/faculty/students/${req.studentId || req.id}`)}
+                          className="p-1.5 rounded-lg bg-purple-500/20 text-[#7c3aed] hover:bg-purple-500/30 border border-purple-500/30 font-bold"
+                          title="View Student Extracurricular Portfolio Dashboard"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={() => handleApprove(req.id)}
                           className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 font-bold flex items-center gap-1"
